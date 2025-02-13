@@ -2,9 +2,24 @@
 <html>
 <head>
     <title>Opening Obsidian...</title>
-    <meta http-equiv="refresh" content="0; url=obsidian://open?path=/Users/YourUser/Google%20Drive/ObsidianVault/MyNote.md">
+    <script>
+        // Get the full Obsidian URL from the query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const obsidianURL = urlParams.get('obsidian_url');
+
+        if (obsidianURL) {
+            // Redirect directly to the provided Obsidian URL
+            window.location.href = decodeURIComponent(obsidianURL);
+        }
+    </script>
 </head>
 <body>
-    <p>If nothing happens, <a href="obsidian://open?path=/Users/YourUser/Google%20Drive/ObsidianVault/MyNote.md">click here</a>.</p>
+    <p>Redirecting to Obsidian... If nothing happens, <a id="manualLink">click here</a>.</p>
+
+    <script>
+        if (obsidianURL) {
+            document.getElementById("manualLink").href = decodeURIComponent(obsidianURL);
+        }
+    </script>
 </body>
 </html>
