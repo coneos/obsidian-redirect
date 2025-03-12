@@ -3,40 +3,23 @@
 <head>
     <title>Opening Obsidian for Daddy 🥰</title>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            let obsidianURLParam = urlParams.get('obsidian_url'); // Full Obsidian URL encoded
-            let vault = "Arquitech"; // Default vault name
-            let filepath = "";
+        // Get the full Obsidian URL from the query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const obsidianURL = urlParams.get('obsidian_url');
 
-            if (obsidianURLParam) {
-                // Decode the obsidian_url parameter
-                let decodedObsidianURL = decodeURIComponent(obsidianURLParam);
-
-                // Extract file or filepath parameter
-                let internalParams = new URLSearchParams(decodedObsidianURL.split("?")[1]);
-                if (internalParams.has("file")) {
-                    filepath = decodeURIComponent(internalParams.get("file"));
-                } else if (internalParams.has("filepath")) {
-                    filepath = decodeURIComponent(internalParams.get("filepath"));
-                }
-            }
-
-            if (filepath) {
-                // Construct the new advanced-uri Obsidian URL
-                const newObsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
-
-                // Update manual fallback link
-                document.getElementById("manualLink").href = newObsidianURL;
-                document.getElementById("manualLink").innerText = "Click here to open in Obsidian";
-                
-                // ✅ Restore the direct redirect to Obsidian (which worked in WhatsApp before)
-                window.location.href = newObsidianURL;
-            }
-        });
+        if (obsidianURL) {
+            // Redirect directly to the provided Obsidian URL
+            window.location.href = decodeURIComponent(obsidianURL);
+        }
     </script>
 </head>
 <body>
     <p>Redirecting to Obsidian... If nothing happens, <a id="manualLink">click here</a>.</p>
+
+    <script>
+        if (obsidianURL) {
+            document.getElementById("manualLink").href = decodeURIComponent(obsidianURL);
+        }
+    </script>
 </body>
 </html>
