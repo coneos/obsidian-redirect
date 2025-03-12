@@ -10,13 +10,17 @@
             const file = urlParams.get('file');
 
             if (!filepath && file) {
-                // Convert file (which may use / instead of %) to a proper filepath format
-                filepath = file.replace(/%252F/g, "/").replace(/%25/g, "%");
+                // Decode the file parameter to get a clean filepath
+                filepath = decodeURIComponent(file);
             }
 
             if (filepath) {
                 const obsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
+
+                // Perform the redirect
                 window.location.href = obsidianURL;
+
+                // Update manual fallback link
                 document.getElementById("manualLink").href = obsidianURL;
             }
         });
