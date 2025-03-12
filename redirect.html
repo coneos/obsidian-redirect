@@ -5,8 +5,8 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const urlParams = new URLSearchParams(window.location.search);
-            let obsidianURLParam = urlParams.get('obsidian_url'); // This contains the full Obsidian URL
-            let vault = "Arquitech"; // Default vault name
+            let obsidianURLParam = urlParams.get('obsidian_url'); // Full Obsidian URL
+            let vault = ""; // Vault name to be extracted
             let filepath = "";
 
             if (obsidianURLParam) {
@@ -16,6 +16,9 @@
                 // Extract the actual query parameters from the decoded URL
                 let internalParams = new URLSearchParams(decodedObsidianURL.split("?")[1]);
 
+                if (internalParams.has("vault")) {
+                    vault = decodeURIComponent(internalParams.get("vault"));
+                }
                 if (internalParams.has("file")) {
                     filepath = decodeURIComponent(internalParams.get("file"));
                 } else if (internalParams.has("filepath")) {
@@ -23,8 +26,8 @@
                 }
             }
 
-            if (filepath) {
-                // Construct the new advanced-uri Obsidian URL
+            if (vault && filepath) {
+                // Ensure vault name is correctly encoded
                 const newObsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
 
                 // Debug: Show the generated Obsidian URL
@@ -35,13 +38,13 @@
                 // Perform the redirect immediately
                 window.location.href = newObsidianURL;
             } else {
-                document.getElementById("debugOutput").innerText = "No valid filepath detected!";
+                document.getElementById("debugOutput").innerText = "No valid vault or filepath detected!";
             }
         });
     </script>
 </head>
 <body>
-    <p>Redirecting to Obsidian..... If nothing happens, <a id="manualLink">click here</a>.</p>
+    <p>Redirecting to Obsidian....... If nothing happens, <a id="manualLink">click here</a>.</p>
     <p><strong>Generated Obsidian URL:</strong> <span id="debugOutput" style="word-break: break-all;"></span></p>
 </body>
 </html>
