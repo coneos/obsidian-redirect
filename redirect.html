@@ -32,18 +32,16 @@
                 document.getElementById("manualLink").href = newObsidianURL;
                 document.getElementById("manualLink").innerText = "Click here to open in Obsidian";
 
-                // Perform the redirect
-                setTimeout(() => {
-                    window.location.href = newObsidianURL;
-                }, 1000);
+                // Perform the redirect immediately
+                window.location.href = newObsidianURL;
             } else {
-                document.getElementById("debugOutput").innerText = "No valid filepath detected!!!";
+                document.getElementById("debugOutput").innerText = "No valid filepath detected!";
             }
         });
     </script>
 </head>
 <body>
-    <p>Redirecting to Obsidian... If nothing happens, <a id="manualLink">click here</a>.</p>
+    <p>Redirecting to Obsidian.... If nothing happens, <a id="manualLink">click here</a>.</p>
     <p><strong>Generated Obsidian URL:</strong> <span id="debugOutput" style="word-break: break-all;"></span></p>
 </body>
 </html>
