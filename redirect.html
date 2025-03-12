@@ -24,16 +24,22 @@
             }
 
             if (filepath) {
-                // Construct the new advanced-uri Obsidian URL
-                const newObsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
+                // Step 1: First, open Obsidian itself
+                const openObsidianVaultURL = `obsidian://open?vault=${encodeURIComponent(vault)}`;
+                window.location.href = openObsidianVaultURL;
 
-                // Debug: Show the generated Obsidian URL
-                document.getElementById("debugOutput").innerText = newObsidianURL;
-                document.getElementById("manualLink").href = newObsidianURL;
-                document.getElementById("manualLink").innerText = "Click here to open in Obsidian";
+                // Step 2: Wait 5 seconds, then open the file
+                setTimeout(() => {
+                    const newObsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
 
-                // Perform the redirect immediately
-                window.location.href = newObsidianURL;
+                    // Debug: Show the generated Obsidian URL
+                    document.getElementById("debugOutput").innerText = newObsidianURL;
+                    document.getElementById("manualLink").href = newObsidianURL;
+                    document.getElementById("manualLink").innerText = "Click here to open in Obsidian";
+
+                    // Redirect to the correct file after Obsidian has loaded
+                    window.location.href = newObsidianURL;
+                }, 5000); // 5-second delay to ensure Obsidian is fully open
             } else {
                 document.getElementById("debugOutput").innerText = "No valid filepath detected!";
             }
@@ -41,7 +47,7 @@
     </script>
 </head>
 <body>
-    <p>Redirecting to Obsidian..... If nothing happens, <a id="manualLink">click here</a>.</p>
+    <p>Opening Obsidian...... Please wait. If nothing happens, <a id="manualLink">click here</a>.</p>
     <p><strong>Generated Obsidian URL:</strong> <span id="debugOutput" style="word-break: break-all;"></span></p>
 </body>
 </html>
