@@ -5,16 +5,17 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const urlParams = new URLSearchParams(window.location.search);
-            let obsidianURLParam = urlParams.get('obsidian_url'); // Full Obsidian URL encoded
+            let obsidianURLParam = urlParams.get('obsidian_url'); // This contains the full Obsidian URL
             let vault = "Arquitech"; // Default vault name
             let filepath = "";
 
             if (obsidianURLParam) {
-                // Decode the obsidian_url parameter
+                // Decode the full Obsidian URL parameter
                 let decodedObsidianURL = decodeURIComponent(obsidianURLParam);
 
-                // Extract file or filepath parameter
+                // Extract the actual query parameters from the decoded URL
                 let internalParams = new URLSearchParams(decodedObsidianURL.split("?")[1]);
+
                 if (internalParams.has("file")) {
                     filepath = decodeURIComponent(internalParams.get("file"));
                 } else if (internalParams.has("filepath")) {
@@ -26,17 +27,21 @@
                 // Construct the new advanced-uri Obsidian URL
                 const newObsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
 
-                // Update manual fallback link
+                // Debug: Show the generated Obsidian URL
+                document.getElementById("debugOutput").innerText = newObsidianURL;
                 document.getElementById("manualLink").href = newObsidianURL;
                 document.getElementById("manualLink").innerText = "Click here to open in Obsidian";
-                
-                // ✅ Restore the direct redirect to Obsidian (which worked in WhatsApp before)
+
+                // Perform the redirect immediately
                 window.location.href = newObsidianURL;
+            } else {
+                document.getElementById("debugOutput").innerText = "No valid filepath detected!";
             }
         });
     </script>
 </head>
 <body>
-    <p>Redirecting to Obsidian... If nothing happens, <a id="manualLink">click here</a>.</p>
+    <p>Redirecting to Obsidian..... If nothing happens, <a id="manualLink">click here</a>.</p>
+    <p><strong>Generated Obsidian URL:</strong> <span id="debugOutput" style="word-break: break-all;"></span></p>
 </body>
 </html>
