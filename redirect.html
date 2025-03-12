@@ -3,23 +3,26 @@
 <head>
     <title>Opening Obsidian for Daddy 🥰</title>
     <script>
-        // Get the full Obsidian URL from the query parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const obsidianURL = urlParams.get('obsidian_url');
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const vault = "Arquitech";
+            let filepath = urlParams.get('filepath');
+            const file = urlParams.get('file');
 
-        if (obsidianURL) {
-            // Redirect directly to the provided Obsidian URL
-            window.location.href = decodeURIComponent(obsidianURL);
-        }
+            if (!filepath && file) {
+                // Convert file (which may use / instead of %) to a proper filepath format
+                filepath = file.replace(/%252F/g, "/").replace(/%25/g, "%");
+            }
+
+            if (filepath) {
+                const obsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
+                window.location.href = obsidianURL;
+                document.getElementById("manualLink").href = obsidianURL;
+            }
+        });
     </script>
 </head>
 <body>
     <p>Redirecting to Obsidian... If nothing happens, <a id="manualLink">click here</a>.</p>
-
-    <script>
-        if (obsidianURL) {
-            document.getElementById("manualLink").href = decodeURIComponent(obsidianURL);
-        }
-    </script>
 </body>
 </html>
