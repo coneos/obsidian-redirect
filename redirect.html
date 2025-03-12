@@ -10,23 +10,30 @@
             const file = urlParams.get('file');
 
             if (!filepath && file) {
-                // Decode the file parameter to get a clean filepath
+                // Decode the file parameter to construct a valid filepath
                 filepath = decodeURIComponent(file);
             }
 
             if (filepath) {
                 const obsidianURL = `obsidian://advanced-uri?vault=${encodeURIComponent(vault)}&filepath=${encodeURIComponent(filepath)}&openmode=true`;
 
-                // Perform the redirect
-                window.location.href = obsidianURL;
-
-                // Update manual fallback link
+                // Debug: Show the generated Obsidian URL
+                document.getElementById("debugOutput").innerText = obsidianURL;
                 document.getElementById("manualLink").href = obsidianURL;
+                document.getElementById("manualLink").innerText = "Click here to open in Obsidian";
+
+                // Perform the redirect
+                setTimeout(() => {
+                    window.location.href = obsidianURL;
+                }, 1000); // Small delay to allow debugging
+            } else {
+                document.getElementById("debugOutput").innerText = "No valid filepath detected!";
             }
         });
     </script>
 </head>
 <body>
     <p>Redirecting to Obsidian... If nothing happens, <a id="manualLink">click here</a>.</p>
+    <p><strong>Generated Obsidian URL:</strong> <span id="debugOutput" style="word-break: break-all;"></span></p>
 </body>
 </html>
