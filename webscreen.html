@@ -2,39 +2,38 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- IMPORTANT: this creates the field in AutoTools called "Tasks JSON Base64" -->
+  <!-- AutoTools Web Screen Variable (JS) -->
   <meta name="autotoolswebscreen"
         type="variablejs"
         id="tasks_b64"
         label="Tasks JSON Base64"
-        description="Base64-encoded JSON string containing tasks."
+        description="Base64-encoded JSON of tasks (object keyed by task id)."
         defaultValue="" />
 
-  <title>Tasks Viewer</title>
+  <title>Tasks</title>
 
   <style>
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b1220; color:#e8eefc; }
-    .wrap { padding:18px; max-width:1100px; margin:0 auto; }
-    h1 { margin:0 0 14px; font-size:28px; letter-spacing:.2px; }
-    .card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); border-radius:16px; padding:14px; margin:12px 0; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .pill { padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); }
-    .ok { color:#7CFFB2; }
-    .bad { color:#FF8A8A; }
-    input[type="text"]{
-      width:100%; max-width:520px; padding:10px 12px;
-      border-radius:12px; border:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.25); color:#e8eefc; outline:none;
-    }
-    table { width:100%; border-collapse:collapse; }
-    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.10); vertical-align:top; }
-    th { font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:rgba(232,238,252,.75); }
-    td { font-size:14px; }
-    .muted { color:rgba(232,238,252,.70); }
-    pre { white-space:pre-wrap; word-break:break-word; margin:0; font-size:12px; color:rgba(232,238,252,.85); }
-    .btn { padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08); color:#e8eefc; cursor:pointer; }
+    :root { color-scheme: dark; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b1220; color:#e7eefc; }
+    .wrap { padding:16px; max-width: 980px; margin: 0 auto; }
+    h1 { margin: 6px 0 14px; font-size: 34px; font-weight: 700; letter-spacing:.2px; }
+    .card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 14px; margin: 10px 0; }
+    .row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .pill { padding:6px 10px; border-radius: 999px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); font-size: 12px; }
+    .pill.ok { background: rgba(70,175,74,.15); border-color: rgba(70,175,74,.35); }
+    .pill.bad { background: rgba(235,87,87,.14); border-color: rgba(235,87,87,.35); }
+    .btn { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:#e7eefc; padding:10px 12px; border-radius: 12px; font-size: 14px; }
+    .btn:active { transform: translateY(1px); }
+    input[type="text"]{ width:100%; box-sizing:border-box; background: rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.12); color:#e7eefc; padding:12px 12px; border-radius: 12px; font-size: 15px; outline: none; }
+    .muted { color: rgba(231,238,252,.7); font-size: 13px; }
+    table { width:100%; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,.08); vertical-align: top; }
+    th { text-align:left; font-size: 12px; letter-spacing:.12em; text-transform: uppercase; color: rgba(231,238,252,.7); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    pre { white-space: pre-wrap; word-break: break-word; margin: 0; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 10px; }
   </style>
 </head>
 
@@ -44,40 +43,42 @@
 
     <div class="card">
       <div class="row">
-        <div class="pill" id="injectStatus">Checking injection…</div>
-        <div class="pill">Tasks: <span id="taskCount">0</span></div>
-        <button class="btn" id="toggleRawBtn">Show raw JSON</button>
+        <span id="injectPill" class="pill bad">⛔ tasks_b64 NOT received</span>
+        <span class="pill">Tasks: <b id="tasksCount">0</b></span>
+        <button class="btn" id="btnToggleRaw" type="button">Show raw JSON</button>
+      </div>
+      <div class="muted" style="margin-top:8px;">
+        Tip: variables only inject when loaded via URL (not local file).
       </div>
     </div>
 
     <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <div style="flex:1; min-width:240px;">
-          <div class="muted" style="margin-bottom:6px;">Search (title / status / project)</div>
-          <input id="search" type="text" placeholder="Search…" />
-        </div>
-        <div style="flex:1; min-width:240px;">
-          <div class="muted" style="margin-bottom:6px;">tasks_b64 (first 160 chars)</div>
-          <pre id="b64Preview"></pre>
-          <div class="muted">len: <span id="b64Len">0</span></div>
-        </div>
+      <div class="muted" style="margin-bottom:8px;">Search (title / status / project)</div>
+      <input id="search" type="text" placeholder="Search..." />
+    </div>
+
+    <div class="card">
+      <div class="muted" style="margin-bottom:8px;">tasks_b64 (first 160 chars)</div>
+      <div class="mono">
+        <pre id="b64Preview"></pre>
+        <div class="muted mono" id="b64Len"></div>
       </div>
     </div>
 
     <div class="card" id="rawCard" style="display:none;">
-      <div class="muted" style="margin-bottom:8px;">Decoded JSON preview (first 2000 chars)</div>
-      <pre id="jsonPreview"></pre>
+      <div class="muted" style="margin-bottom:8px;">Decoded JSON (first 2000 chars)</div>
+      <div class="mono"><pre id="rawJson"></pre></div>
     </div>
 
     <div class="card">
-      <div class="muted" style="margin-bottom:10px;">Tasks table (first 200 shown, filtered)</div>
+      <div class="muted" style="margin-bottom:8px;">Tasks table (first 200 shown, filtered)</div>
       <table>
         <thead>
           <tr>
-            <th style="width:38%;">Title</th>
-            <th style="width:14%;">Status</th>
-            <th style="width:14%;">Due</th>
-            <th>Project</th>
+            <th>TITLE</th>
+            <th>STATUS</th>
+            <th>DUE</th>
+            <th>PROJECT</th>
           </tr>
         </thead>
         <tbody id="tbody">
@@ -85,153 +86,252 @@
         </tbody>
       </table>
     </div>
+
+    <!-- DEBUG CARD -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="muted">Debug timeline</div>
+        <button class="btn" id="btnClearDebug" type="button">Clear</button>
+      </div>
+      <div class="mono" style="margin-top:8px;">
+        <pre id="debug"></pre>
+      </div>
+    </div>
   </div>
 
 <script>
-(function(){
-  // ---- Base64 decode (safe fallback if atob fails) ----
-  function b64ToUtf8(b64) {
-    // Try browser atob first
-    try {
-      // atob -> binary string
-      var bin = atob(b64);
-      // binary -> utf8
-      var esc = "";
-      for (var i = 0; i < bin.length; i++) {
-        esc += "%" + ("00" + bin.charCodeAt(i).toString(16)).slice(-2);
-      }
-      return decodeURIComponent(esc);
-    } catch (e) {
-      return "";
+/** -------------------------
+ *  Debug helpers
+ *  ------------------------- */
+const T0 = performance.now();
+function dbg(label, extra) {
+  const ms = Math.round(performance.now() - T0);
+  const line = extra !== undefined ? `${ms}ms  ${label}  → ${extra}` : `${ms}ms  ${label}`;
+  const el = document.getElementById("debug");
+  if (el) el.textContent += (el.textContent ? "\n" : "") + line;
+}
+window.addEventListener("error", (e) => dbg("window.error", e.message || String(e.error || e)));
+window.addEventListener("unhandledrejection", (e) => dbg("unhandledrejection", (e.reason && e.reason.message) ? e.reason.message : String(e.reason)));
+
+dbg("script start");
+dbg("document.readyState", document.readyState);
+
+/** -------------------------
+ *  Base64 decode safe for UTF-8 JSON
+ *  ------------------------- */
+function base64ToUtf8(b64) {
+  // remove whitespace/newlines that some automation tools may inject
+  const clean = (b64 || "").replace(/\s+/g, "");
+  // atob -> binary string -> Uint8Array -> TextDecoder
+  const bin = atob(clean);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+/** -------------------------
+ *  Parse tasks payload
+ *  Accepts either:
+ *   A) { "123": {task...}, "456": {task...} }
+ *   B) { success:true, data:[ {...}, {...} ] }
+ *  ------------------------- */
+function normalizeTasks(parsed) {
+  // Case B: wrapper with data array
+  if (parsed && Array.isArray(parsed.data)) {
+    const out = {};
+    for (const t of parsed.data) {
+      const id = String(t.id ?? t.url?.id ?? "");
+      if (!id) continue;
+      out[id] = t;
     }
+    return out;
   }
-
-  function safeStr(x){ return (x === null || x === undefined) ? "" : String(x); }
-
-  function normalizeTask(titleKey, t) {
-    t = t || {};
-    var statusLabel = "";
-    if (t.status && (t.status.label || t.status.value)) statusLabel = safeStr(t.status.label || t.status.value);
-
-    var due = safeStr(t.dueDate);
-
-    var projectName = "";
-    var projectId = "";
-    if (t.project) {
-      projectName = safeStr(t.project.name);
-      projectId = safeStr(t.project.id);
-    }
-    // sometimes projectID is in url.projectID
-    if (!projectId && t.url && t.url.projectID) projectId = safeStr(t.url.projectID);
-
-    var projectText = projectName ? projectName : (projectId ? ("Project " + projectId) : "");
-
-    return {
-      title: safeStr(t.title || titleKey),
-      status: statusLabel,
-      dueDate: due,
-      project: projectText,
-      _raw: t
-    };
+  // Case A: already keyed object
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    return parsed;
   }
+  return {};
+}
 
-  // ---- UI refs ----
-  var elInject = document.getElementById("injectStatus");
-  var elCount = document.getElementById("taskCount");
-  var elB64Prev = document.getElementById("b64Preview");
-  var elB64Len = document.getElementById("b64Len");
-  var elJsonPrev = document.getElementById("jsonPreview");
-  var elBody = document.getElementById("tbody");
-  var elSearch = document.getElementById("search");
-  var rawCard = document.getElementById("rawCard");
-  var toggleRawBtn = document.getElementById("toggleRawBtn");
+function safeText(x) {
+  if (x === null || x === undefined) return "";
+  return String(x);
+}
 
-  toggleRawBtn.addEventListener("click", function(){
-    rawCard.style.display = (rawCard.style.display === "none") ? "block" : "none";
-    toggleRawBtn.textContent = (rawCard.style.display === "none") ? "Show raw JSON" : "Hide raw JSON";
+function getTaskProjectName(task) {
+  // Support both shapes you showed
+  return safeText(task.project?.name || task.url?.projectName || "");
+}
+function getTaskProjectId(task) {
+  return safeText(task.project?.id || task.url?.projectID || "");
+}
+function getTaskStatus(task) {
+  return safeText(task.status?.label || task.status?.value || task.status || "");
+}
+function getTaskDue(task) {
+  return safeText(task.dueDate || "");
+}
+
+let TASKS_OBJ = {};
+let TASKS_ARR = [];
+
+/** -------------------------
+ *  Render (fast: one innerHTML assignment)
+ *  ------------------------- */
+function renderTable(filterText) {
+  dbg("render start", `filter="${filterText || ""}"`);
+  const q = (filterText || "").trim().toLowerCase();
+
+  const filtered = !q ? TASKS_ARR : TASKS_ARR.filter(t => {
+    const title = safeText(t.title || t.name || "");
+    const status = getTaskStatus(t);
+    const proj = getTaskProjectName(t);
+    return (title + " " + status + " " + proj).toLowerCase().includes(q);
   });
 
-  // ---- Read injected variable ----
-  var injected = (typeof tasks_b64 !== "undefined") && tasks_b64 && tasks_b64 !== "{tasks_b64}";
-  var b64 = injected ? String(tasks_b64) : "";
+  const shown = filtered.slice(0, 200);
 
-  elInject.innerHTML = injected
-    ? '<span class="ok">✅ tasks_b64 received</span>'
-    : '<span class="bad">⛔ tasks_b64 NOT received (variables not injected)</span>';
+  const tbody = document.getElementById("tbody");
+  if (!tbody) return;
 
-  elB64Len.textContent = b64.length;
-  elB64Prev.textContent = b64 ? b64.slice(0,160) : "{tasks_b64}";
-
-  if (!b64) {
-    elJsonPrev.textContent = "Tip: variables only inject when the HTML is loaded via URL (not local file).";
+  if (shown.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" class="muted">No tasks loaded.</td></tr>`;
+    dbg("render done", "0 rows");
     return;
   }
 
-  // ---- Decode + parse ----
-  var jsonText = b64ToUtf8(b64);
-  elJsonPrev.textContent = jsonText ? jsonText.slice(0,2000) : "(decode failed)";
+  const rows = shown.map(t => {
+    const id = safeText(t.id || t.url?.id || "");
+    const title = safeText(t.title || t.name || "(no title)");
+    const status = getTaskStatus(t);
+    const due = getTaskDue(t);
+    const projName = getTaskProjectName(t);
+    const projId = getTaskProjectId(t);
 
-  var obj = null;
+    const projCell = projName ? `${projName}${projId ? ` <span class="muted mono">(#${projId})</span>` : ""}` : `<span class="muted">—</span>`;
+    return `
+      <tr>
+        <td>
+          <div><b>${escapeHtml(title)}</b></div>
+          <div class="muted mono">id: ${escapeHtml(id)}</div>
+        </td>
+        <td>${escapeHtml(status || "—")}</td>
+        <td class="mono">${escapeHtml(due || "—")}</td>
+        <td>${projCell}</td>
+      </tr>
+    `;
+  }).join("");
+
+  tbody.innerHTML = rows;
+  dbg("render done", `${shown.length} rows (of ${filtered.length})`);
+}
+
+function escapeHtml(str) {
+  return safeText(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/** -------------------------
+ *  Main load
+ *  ------------------------- */
+function loadTasksFromInjectedVariable() {
+  dbg("variable read start");
+  const b64 = (typeof tasks_b64 !== "undefined") ? tasks_b64 : "";
+  dbg("variable read end", `len=${(b64 || "").length}`);
+
+  // show b64 preview + len
+  document.getElementById("b64Preview").textContent = (b64 || "").slice(0, 160) || "{tasks_b64}";
+  document.getElementById("b64Len").textContent = "len: " + (b64 || "").length;
+
+  const injected = b64 && b64.trim() && b64.indexOf("{tasks_b64}") === -1;
+  const pill = document.getElementById("injectPill");
+  pill.className = "pill " + (injected ? "ok" : "bad");
+  pill.textContent = injected ? "✅ tasks_b64 received" : "⛔ tasks_b64 NOT received";
+
+  if (!injected) {
+    dbg("stop", "no injected variable");
+    return;
+  }
+
+  let jsonText = "";
   try {
-    obj = JSON.parse(jsonText);
+    dbg("base64 decode start");
+    jsonText = base64ToUtf8(b64);
+    dbg("base64 decode end", `jsonChars=${jsonText.length}`);
   } catch (e) {
-    elInject.innerHTML = '<span class="bad">⛔ JSON parse failed:</span> ' + safeStr(e);
+    dbg("decode error", e.message || String(e));
+    showParseError("Base64 decode failed: " + (e.message || e));
     return;
   }
 
-  // Your tasks JSON is an object: { "Task Name": { ... }, "Task Name 2": { ... } }
-  var keys = Object.keys(obj || {});
-  var tasks = [];
-  for (var i = 0; i < keys.length; i++) {
-    var k = keys[i];
-    tasks.push(normalizeTask(k, obj[k]));
+  // raw JSON preview (lazy displayed; still store a short preview)
+  const rawPreview = jsonText.slice(0, 2000);
+  document.getElementById("rawJson").textContent = rawPreview;
+
+  let parsed;
+  try {
+    dbg("JSON.parse start");
+    parsed = JSON.parse(jsonText);
+    dbg("JSON.parse end");
+  } catch (e) {
+    dbg("JSON.parse failed", e.message || String(e));
+    showParseError("JSON parse failed: " + (e.message || e));
+    return;
   }
 
-  elCount.textContent = tasks.length;
+  dbg("normalize start");
+  TASKS_OBJ = normalizeTasks(parsed);
+  dbg("normalize end", `keys=${Object.keys(TASKS_OBJ).length}`);
 
-  function render(list) {
-    var max = Math.min(list.length, 200);
-    if (max === 0) {
-      elBody.innerHTML = '<tr><td colspan="4" class="muted">No tasks match.</td></tr>';
-      return;
-    }
-    var html = "";
-    for (var i = 0; i < max; i++) {
-      var t = list[i];
-      html += "<tr>"
-        + "<td>" + escapeHtml(t.title) + "</td>"
-        + "<td>" + escapeHtml(t.status) + "</td>"
-        + "<td>" + escapeHtml(t.dueDate) + "</td>"
-        + "<td class='muted'>" + escapeHtml(t.project) + "</td>"
-        + "</tr>";
-    }
-    elBody.innerHTML = html;
-  }
+  TASKS_ARR = Object.keys(TASKS_OBJ).map(k => {
+    const t = TASKS_OBJ[k] || {};
+    // ensure id exists (use key if missing)
+    if (!t.id) t.id = k;
+    return t;
+  });
 
-  function escapeHtml(s) {
-    s = safeStr(s);
-    return s.replace(/[&<>"']/g, function(m){
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
-    });
-  }
+  document.getElementById("tasksCount").textContent = TASKS_ARR.length;
 
-  function applyFilter() {
-    var q = safeStr(elSearch.value).toLowerCase().trim();
-    if (!q) { render(tasks); return; }
-    var filtered = [];
-    for (var i = 0; i < tasks.length; i++) {
-      var t = tasks[i];
-      var hay = (t.title + " " + t.status + " " + t.project + " " + t.dueDate).toLowerCase();
-      if (hay.indexOf(q) !== -1) filtered.push(t);
-    }
-    render(filtered);
-  }
+  // first render
+  renderTable(document.getElementById("search").value);
+}
 
-  elSearch.addEventListener("input", applyFilter);
+function showParseError(msg) {
+  const pill = document.getElementById("injectPill");
+  pill.className = "pill bad";
+  pill.textContent = "⛔ " + msg;
+}
 
-  // initial render
-  render(tasks);
-})();
+/** -------------------------
+ *  UI wiring
+ *  ------------------------- */
+document.getElementById("btnToggleRaw").addEventListener("click", () => {
+  const card = document.getElementById("rawCard");
+  const isHidden = card.style.display === "none";
+  card.style.display = isHidden ? "block" : "none";
+});
+
+document.getElementById("btnClearDebug").addEventListener("click", () => {
+  document.getElementById("debug").textContent = "";
+  dbg("debug cleared");
+});
+
+document.getElementById("search").addEventListener("input", (e) => {
+  // debounce lightly to reduce re-render cost
+  if (window.__t) clearTimeout(window.__t);
+  window.__t = setTimeout(() => renderTable(e.target.value), 80);
+});
+
+/** -------------------------
+ *  Run
+ *  ------------------------- */
+dbg("before loadTasks()");
+loadTasksFromInjectedVariable();
+dbg("after loadTasks()");
 </script>
 
 </body>
