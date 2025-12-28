@@ -1,76 +1,238 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-  <!-- REQUIRED: AutoTools variable definition -->
+  <!-- IMPORTANT: this creates the field in AutoTools called "Tasks JSON Base64" -->
   <meta name="autotoolswebscreen"
         type="variablejs"
-        id="projects_b64"
-        label="Projects JSON Base64"
-        description="Base64 encoded projects JSON"
+        id="tasks_b64"
+        label="Tasks JSON Base64"
+        description="Base64-encoded JSON string containing tasks."
         defaultValue="" />
 
+  <title>Tasks Viewer</title>
+
   <style>
-    body {
-      background: #0f172a;
-      color: #e5e7eb;
-      font-family: system-ui, sans-serif;
-      padding: 16px;
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b1220; color:#e8eefc; }
+    .wrap { padding:18px; max-width:1100px; margin:0 auto; }
+    h1 { margin:0 0 14px; font-size:28px; letter-spacing:.2px; }
+    .card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); border-radius:16px; padding:14px; margin:12px 0; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .pill { padding:6px 10px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); }
+    .ok { color:#7CFFB2; }
+    .bad { color:#FF8A8A; }
+    input[type="text"]{
+      width:100%; max-width:520px; padding:10px 12px;
+      border-radius:12px; border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25); color:#e8eefc; outline:none;
     }
-    .project {
-      background: #020617;
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 8px;
-    }
-    .name { font-weight: 600; }
-    .status { opacity: .7; font-size: 13px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.10); vertical-align:top; }
+    th { font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:rgba(232,238,252,.75); }
+    td { font-size:14px; }
+    .muted { color:rgba(232,238,252,.70); }
+    pre { white-space:pre-wrap; word-break:break-word; margin:0; font-size:12px; color:rgba(232,238,252,.85); }
+    .btn { padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.08); color:#e8eefc; cursor:pointer; }
   </style>
 </head>
 
 <body>
-  <h2>Projects</h2>
-  <div id="projects"></div>
+  <div class="wrap">
+    <h1>Tasks</h1>
 
-  <script>
-    function decodeBase64Utf8(b64) {
-      return decodeURIComponent(
-        atob(b64)
-          .split('')
-          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-    }
+    <div class="card">
+      <div class="row">
+        <div class="pill" id="injectStatus">Checking injection…</div>
+        <div class="pill">Tasks: <span id="taskCount">0</span></div>
+        <button class="btn" id="toggleRawBtn">Show raw JSON</button>
+      </div>
+    </div>
 
-    if (!projects_b64 || projects_b64.length < 20) {
-      document.getElementById("projects").textContent =
-        "❌ No projects_b64 injected";
-    } else {
-      try {
-        const jsonText = decodeBase64Utf8(projects_b64);
-        const obj = JSON.parse(jsonText);
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div style="flex:1; min-width:240px;">
+          <div class="muted" style="margin-bottom:6px;">Search (title / status / project)</div>
+          <input id="search" type="text" placeholder="Search…" />
+        </div>
+        <div style="flex:1; min-width:240px;">
+          <div class="muted" style="margin-bottom:6px;">tasks_b64 (first 160 chars)</div>
+          <pre id="b64Preview"></pre>
+          <div class="muted">len: <span id="b64Len">0</span></div>
+        </div>
+      </div>
+    </div>
 
-        const list = obj.data || [];
-        const root = document.getElementById("projects");
+    <div class="card" id="rawCard" style="display:none;">
+      <div class="muted" style="margin-bottom:8px;">Decoded JSON preview (first 2000 chars)</div>
+      <pre id="jsonPreview"></pre>
+    </div>
 
-        root.innerHTML = `✅ Projects loaded: ${list.length}<br><br>`;
+    <div class="card">
+      <div class="muted" style="margin-bottom:10px;">Tasks table (first 200 shown, filtered)</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:38%;">Title</th>
+            <th style="width:14%;">Status</th>
+            <th style="width:14%;">Due</th>
+            <th>Project</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="4" class="muted">No tasks loaded.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-        list.slice(0, 25).forEach(p => {
-          const div = document.createElement("div");
-          div.className = "project";
-          div.innerHTML = `
-            <div class="name">${p.name}</div>
-            <div class="status">${p.status} • due ${p.dueDate || "—"}</div>
-          `;
-          root.appendChild(div);
-        });
-
-      } catch (e) {
-        document.getElementById("projects").textContent =
-          "❌ Decode/parse error: " + e.message;
+<script>
+(function(){
+  // ---- Base64 decode (safe fallback if atob fails) ----
+  function b64ToUtf8(b64) {
+    // Try browser atob first
+    try {
+      // atob -> binary string
+      var bin = atob(b64);
+      // binary -> utf8
+      var esc = "";
+      for (var i = 0; i < bin.length; i++) {
+        esc += "%" + ("00" + bin.charCodeAt(i).toString(16)).slice(-2);
       }
+      return decodeURIComponent(esc);
+    } catch (e) {
+      return "";
     }
-  </script>
+  }
+
+  function safeStr(x){ return (x === null || x === undefined) ? "" : String(x); }
+
+  function normalizeTask(titleKey, t) {
+    t = t || {};
+    var statusLabel = "";
+    if (t.status && (t.status.label || t.status.value)) statusLabel = safeStr(t.status.label || t.status.value);
+
+    var due = safeStr(t.dueDate);
+
+    var projectName = "";
+    var projectId = "";
+    if (t.project) {
+      projectName = safeStr(t.project.name);
+      projectId = safeStr(t.project.id);
+    }
+    // sometimes projectID is in url.projectID
+    if (!projectId && t.url && t.url.projectID) projectId = safeStr(t.url.projectID);
+
+    var projectText = projectName ? projectName : (projectId ? ("Project " + projectId) : "");
+
+    return {
+      title: safeStr(t.title || titleKey),
+      status: statusLabel,
+      dueDate: due,
+      project: projectText,
+      _raw: t
+    };
+  }
+
+  // ---- UI refs ----
+  var elInject = document.getElementById("injectStatus");
+  var elCount = document.getElementById("taskCount");
+  var elB64Prev = document.getElementById("b64Preview");
+  var elB64Len = document.getElementById("b64Len");
+  var elJsonPrev = document.getElementById("jsonPreview");
+  var elBody = document.getElementById("tbody");
+  var elSearch = document.getElementById("search");
+  var rawCard = document.getElementById("rawCard");
+  var toggleRawBtn = document.getElementById("toggleRawBtn");
+
+  toggleRawBtn.addEventListener("click", function(){
+    rawCard.style.display = (rawCard.style.display === "none") ? "block" : "none";
+    toggleRawBtn.textContent = (rawCard.style.display === "none") ? "Show raw JSON" : "Hide raw JSON";
+  });
+
+  // ---- Read injected variable ----
+  var injected = (typeof tasks_b64 !== "undefined") && tasks_b64 && tasks_b64 !== "{tasks_b64}";
+  var b64 = injected ? String(tasks_b64) : "";
+
+  elInject.innerHTML = injected
+    ? '<span class="ok">✅ tasks_b64 received</span>'
+    : '<span class="bad">⛔ tasks_b64 NOT received (variables not injected)</span>';
+
+  elB64Len.textContent = b64.length;
+  elB64Prev.textContent = b64 ? b64.slice(0,160) : "{tasks_b64}";
+
+  if (!b64) {
+    elJsonPrev.textContent = "Tip: variables only inject when the HTML is loaded via URL (not local file).";
+    return;
+  }
+
+  // ---- Decode + parse ----
+  var jsonText = b64ToUtf8(b64);
+  elJsonPrev.textContent = jsonText ? jsonText.slice(0,2000) : "(decode failed)";
+
+  var obj = null;
+  try {
+    obj = JSON.parse(jsonText);
+  } catch (e) {
+    elInject.innerHTML = '<span class="bad">⛔ JSON parse failed:</span> ' + safeStr(e);
+    return;
+  }
+
+  // Your tasks JSON is an object: { "Task Name": { ... }, "Task Name 2": { ... } }
+  var keys = Object.keys(obj || {});
+  var tasks = [];
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i];
+    tasks.push(normalizeTask(k, obj[k]));
+  }
+
+  elCount.textContent = tasks.length;
+
+  function render(list) {
+    var max = Math.min(list.length, 200);
+    if (max === 0) {
+      elBody.innerHTML = '<tr><td colspan="4" class="muted">No tasks match.</td></tr>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < max; i++) {
+      var t = list[i];
+      html += "<tr>"
+        + "<td>" + escapeHtml(t.title) + "</td>"
+        + "<td>" + escapeHtml(t.status) + "</td>"
+        + "<td>" + escapeHtml(t.dueDate) + "</td>"
+        + "<td class='muted'>" + escapeHtml(t.project) + "</td>"
+        + "</tr>";
+    }
+    elBody.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    s = safeStr(s);
+    return s.replace(/[&<>"']/g, function(m){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
+    });
+  }
+
+  function applyFilter() {
+    var q = safeStr(elSearch.value).toLowerCase().trim();
+    if (!q) { render(tasks); return; }
+    var filtered = [];
+    for (var i = 0; i < tasks.length; i++) {
+      var t = tasks[i];
+      var hay = (t.title + " " + t.status + " " + t.project + " " + t.dueDate).toLowerCase();
+      if (hay.indexOf(q) !== -1) filtered.push(t);
+    }
+    render(filtered);
+  }
+
+  elSearch.addEventListener("input", applyFilter);
+
+  // initial render
+  render(tasks);
+})();
+</script>
+
 </body>
 </html>
