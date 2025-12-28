@@ -3,20 +3,74 @@
 <head>
   <meta charset="utf-8">
 
+  <!-- REQUIRED: AutoTools variable definition -->
   <meta name="autotoolswebscreen"
         type="variablejs"
         id="projects_b64"
         label="Projects JSON Base64"
-        description="Base64 encoded JSON string"
-        defaultValue="eyJzdWNjZXNzIjp0cnVlLCJjb3VudCI6MSwiZGF0YSI6W3sibmFtZSI6IkhlbGxvIiwic3RhdHVzIjoiUGVuZGluZyJ9XX0=" />
+        description="Base64 encoded projects JSON"
+        defaultValue="" />
 
+  <style>
+    body {
+      background: #0f172a;
+      color: #e5e7eb;
+      font-family: system-ui, sans-serif;
+      padding: 16px;
+    }
+    .project {
+      background: #020617;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .name { font-weight: 600; }
+    .status { opacity: .7; font-size: 13px; }
+  </style>
 </head>
+
 <body>
-  <pre id="out"></pre>
+  <h2>Projects</h2>
+  <div id="projects"></div>
 
   <script>
-    // just show what was injected
-    document.getElementById("out").textContent = "projects_b64=" + projects_b64;
+    function decodeBase64Utf8(b64) {
+      return decodeURIComponent(
+        atob(b64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+    }
+
+    if (!projects_b64 || projects_b64.length < 20) {
+      document.getElementById("projects").textContent =
+        "❌ No projects_b64 injected";
+    } else {
+      try {
+        const jsonText = decodeBase64Utf8(projects_b64);
+        const obj = JSON.parse(jsonText);
+
+        const list = obj.data || [];
+        const root = document.getElementById("projects");
+
+        root.innerHTML = `✅ Projects loaded: ${list.length}<br><br>`;
+
+        list.slice(0, 25).forEach(p => {
+          const div = document.createElement("div");
+          div.className = "project";
+          div.innerHTML = `
+            <div class="name">${p.name}</div>
+            <div class="status">${p.status} • due ${p.dueDate || "—"}</div>
+          `;
+          root.appendChild(div);
+        });
+
+      } catch (e) {
+        document.getElementById("projects").textContent =
+          "❌ Decode/parse error: " + e.message;
+      }
+    }
   </script>
 </body>
 </html>
