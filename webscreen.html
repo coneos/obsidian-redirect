@@ -1,23 +1,222 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AutoTools Variable Test</title>
 
-  <meta name="autotoolswebscreen" content="variables">
-  <meta name="autotoolsvariable" content="projects_b64">
+  <!-- ✅ AutoTools Web Screen Variables (this is the structure from the docs) -->
+  <meta name="autotoolswebscreen" type="variablejs"
+        id="projects_b64"
+        label="Projects Base64"
+        description="Base64-encoded JSON string of projects."
+        defaultValue="" />
 
-  <title>AutoTools Variable Test 2</title>
+  <!-- Optional: you can keep a content/html variable if you want -->
+  <meta name="autotoolswebscreen" type="variablehtml"
+        id="content"
+        label="Content"
+        description="Optional HTML content to show on load."
+        defaultValue="" />
+
+  <style>
+    :root { color-scheme: dark; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0b0f14; color:#e6edf3; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 18px; }
+    h1 { margin: 6px 0 14px; font-size: 24px; letter-spacing: .2px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:stretch; }
+    .card { background:#0f1620; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+    .card.grow { flex: 1 1 540px; }
+    .card.small { flex: 0 0 auto; min-width: 220px; }
+    .pill { display:inline-flex; align-items:center; gap:10px; padding:10px 12px; border-radius:999px; border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.04); }
+    .dot { width:10px; height:10px; border-radius:50%; background:#ff4d4d; box-shadow:0 0 0 3px rgba(255,77,77,.18); }
+    .dot.ok { background:#2ecc71; box-shadow:0 0 0 3px rgba(46,204,113,.18); }
+    .muted { color:rgba(230,237,243,.72); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    pre { margin:0; white-space:pre-wrap; word-break:break-word; }
+    table { width:100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.08); vertical-align:top; }
+    th { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:rgba(230,237,243,.70); }
+    .btn {
+      cursor:pointer; user-select:none;
+      border-radius: 12px; padding: 10px 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:#e6edf3; font-weight:600;
+    }
+    .btn:active { transform: translateY(1px); }
+    .badge { display:inline-block; padding:3px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); font-size:12px; }
+  </style>
 </head>
+
 <body>
-  <pre id="out"></pre>
+  <div class="wrap">
+    <h1>AutoTools Variable Test</h1>
+
+    <!-- Optional HTML content variable -->
+    <div id="contentSlot"></div>
+
+    <div class="row">
+      <div class="card small">
+        <div class="muted">Injection</div>
+        <div id="injectPill" class="pill" style="margin-top:8px;">
+          <span id="injectDot" class="dot"></span>
+          <span id="injectText">projects_b64 NOT received</span>
+        </div>
+
+        <div style="height:12px"></div>
+        <div class="muted">Projects</div>
+        <div style="font-size:20px; margin-top:6px;"><span id="count">0</span></div>
+      </div>
+
+      <div class="card grow">
+        <div class="muted mono">projects_b64 (first 160 chars)</div>
+        <pre id="b64Preview" class="mono muted" style="margin-top:8px;"></pre>
+
+        <div style="height:14px"></div>
+        <div class="muted mono">Decoded JSON preview (first 1200 chars)</div>
+        <pre id="jsonPreview" class="mono muted" style="margin-top:8px;"></pre>
+
+        <div style="height:14px"></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div>
+            <span class="badge">Projects table (first 25)</span>
+            <span class="muted" style="margin-left:10px;">name • status • dueDate • progress</span>
+          </div>
+          <button id="toggleRaw" class="btn">Show raw JSON</button>
+        </div>
+
+        <div id="tableWrap" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // If injected correctly, this becomes your base64 string.
-    // If NOT injected, it stays literally "{projects_b64}"
-    const projects_b64 = "{projects_b64}";
-    document.getElementById("out").textContent =
-      "projects_b64 raw:\n" + projects_b64 + "\n\nlen: " + projects_b64.length;
+    // ✅ AutoTools variable injection happens by replacing {projects_b64}
+    // If it stays literally "{projects_b64}", then variables were not injected (usually because not loaded via URL).
+    var projectsB64 = "{projects_b64}";
+    var contentHtml = "{content}";
+
+    // Show optional content if provided
+    if (contentHtml && contentHtml !== "{content}") {
+      document.getElementById("contentSlot").innerHTML = contentHtml;
+    }
+
+    function stripWrappingQuotes(s) {
+      if (!s) return s;
+      s = String(s).trim();
+      if (s.length >= 2 && s[0] === '"' && s[s.length - 1] === '"') return s.slice(1, -1);
+      return s;
+    }
+
+    function base64Decode(b64) {
+      b64 = b64.replace(/-/g, "+").replace(/_/g, "/");
+      while (b64.length % 4 !== 0) b64 += "=";
+
+      var bin = atob(b64); // WebView normally has atob
+      var esc = "";
+      for (var i = 0; i < bin.length; i++) {
+        esc += "%" + bin.charCodeAt(i).toString(16).padStart(2, "0");
+      }
+      try { return decodeURIComponent(esc); } catch (e) { return bin; }
+    }
+
+    function escHtml(s){
+      return String(s ?? "")
+        .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
+    }
+
+    function normalizeProjects(obj) {
+      // Accept API-style {data:[...]} OR dictionary { "name": {..}, ... }
+      if (!obj || typeof obj !== "object") return { count:0, data:[] };
+
+      if (Array.isArray(obj.data)) return { count: obj.data.length, data: obj.data };
+
+      var arr = [];
+      for (var k in obj) {
+        if (!Object.prototype.hasOwnProperty.call(obj,k)) continue;
+        var v = obj[k] || {};
+        if (!v.name) v.name = k;
+        arr.push(v);
+      }
+      return { count: arr.length, data: arr };
+    }
+
+    function buildTable(items) {
+      var max = Math.min(items.length, 25);
+      var html = "<table><thead><tr><th>Name</th><th>Status</th><th>Due</th><th>Progress</th></tr></thead><tbody>";
+      for (var i=0; i<max; i++) {
+        var p = items[i] || {};
+        var prog = (p.progress ?? (p.project && p.project.progress) ?? "");
+        html += "<tr>" +
+          "<td>" + escHtml(p.name || "") + "<div class='muted mono' style='margin-top:6px'>" + escHtml(p.url || "") + "</div></td>" +
+          "<td>" + escHtml(p.status || "") + "</td>" +
+          "<td>" + escHtml(p.dueDate || "") + "</td>" +
+          "<td>" + escHtml(prog) + "</td>" +
+        "</tr>";
+      }
+      html += "</tbody></table>";
+      return html;
+    }
+
+    // ===== Main =====
+    projectsB64 = stripWrappingQuotes(projectsB64);
+    document.getElementById("b64Preview").textContent = (projectsB64 || "").slice(0,160);
+
+    var injected = projectsB64 && projectsB64 !== "{projects_b64}" && projectsB64.length > 10;
+
+    var dot = document.getElementById("injectDot");
+    var txt = document.getElementById("injectText");
+    if (injected) {
+      dot.classList.add("ok");
+      txt.textContent = "projects_b64 received";
+    } else {
+      txt.textContent = "projects_b64 NOT received (variables not injected)";
+      document.getElementById("jsonPreview").textContent =
+        "Tip: variables only inject when the HTML is loaded via URL (not local file).";
+      document.getElementById("tableWrap").innerHTML = "";
+    }
+
+    var decoded = "";
+    var normalized = { count:0, data:[] };
+
+    if (injected) {
+      try {
+        decoded = base64Decode(projectsB64);
+      } catch (e) {
+        decoded = "";
+      }
+      document.getElementById("jsonPreview").textContent = (decoded || "").slice(0,1200);
+
+      try {
+        var obj = JSON.parse(decoded);
+        normalized = normalizeProjects(obj);
+        document.getElementById("count").textContent = String(normalized.count);
+        document.getElementById("tableWrap").innerHTML = buildTable(normalized.data);
+      } catch (e) {
+        document.getElementById("count").textContent = "0";
+        document.getElementById("tableWrap").innerHTML =
+          "<div class='muted'>JSON parse failed: <span class='mono'>" + escHtml(String(e)) + "</span></div>";
+      }
+    }
+
+    // Toggle raw JSON
+    var showingRaw = false;
+    document.getElementById("toggleRaw").addEventListener("click", function(){
+      if (!injected) return;
+      showingRaw = !showingRaw;
+      if (showingRaw) {
+        this.textContent = "Show table";
+        document.getElementById("tableWrap").innerHTML =
+          "<pre class='mono' style='padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03);'>" +
+          escHtml(decoded) + "</pre>";
+      } else {
+        this.textContent = "Show raw JSON";
+        document.getElementById("tableWrap").innerHTML = buildTable(normalized.data);
+      }
+    });
   </script>
 </body>
 </html>
