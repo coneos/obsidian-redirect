@@ -1,17 +1,43 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="autotoolswebscreen.variables" content="projects_b64">
+  <meta charset="utf-8" />
+
+  <!-- ✅ THIS is the AutoTools Web Screen Variables system -->
+  <meta name="autotoolswebscreen" type="variablejs"
+        group="SuiteDash" id="projects_b64"
+        label="Projects Base64"
+        description="Base64-encoded JSON for SuiteDash projects" />
+
+  <title>AT Variables Test</title>
+  <style>
+    body { background:#111; color:#0f0; font-family:monospace; padding:16px; }
+    pre { white-space:pre-wrap; word-break:break-word; }
+  </style>
 </head>
 <body>
 
-<pre id="out">loading…</pre>
+<h3>AutoTools Variable Test</h3>
+<div id="status">Loading…</div>
+<pre id="out"></pre>
 
 <script>
-document.getElementById("out").textContent =
-  "projects_b64 typeof = " + typeof projects_b64 + "\n\n" +
-  "value:\n" + (projects_b64 || "(empty)");
+  function b64DecodeUnicode(str){
+    return decodeURIComponent(escape(atob(str)));
+  }
+
+  // AutoTools creates the variable with the same id: projects_b64
+  if (typeof projects_b64 === "undefined" || !projects_b64) {
+    document.getElementById("status").textContent = "❌ projects_b64 is missing/empty";
+    document.getElementById("out").textContent =
+      "AutoTools object present? " + (typeof AutoTools !== "undefined");
+  } else {
+    document.getElementById("status").textContent = "✅ projects_b64 received";
+    const jsonText = b64DecodeUnicode(projects_b64);
+    const obj = JSON.parse(jsonText);
+    document.getElementById("out").textContent =
+      "Projects: " + (obj.data ? obj.data.length : "n/a") + "\n\nPreview:\n" + jsonText.slice(0, 400);
+  }
 </script>
 
 </body>
