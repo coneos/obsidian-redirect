@@ -2,73 +2,16 @@
 <html>
 <head>
   <meta charset="utf-8">
-
-  <!-- REQUIRED: declare AutoTools variables -->
   <meta name="autotoolswebscreen.variables" content="projects_b64">
-
-  <title>Projects Viewer</title>
-
-  <style>
-    body {
-      background: #111;
-      color: #0f0;
-      font-family: monospace;
-      padding: 16px;
-    }
-    h2 {
-      margin-top: 0;
-    }
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 12px;
-      background: #000;
-      padding: 10px;
-      border: 1px solid #0f0;
-      margin-top: 10px;
-    }
-  </style>
 </head>
-
 <body>
 
-<h2>AutoTools Web Screen</h2>
-
-<div id="status">Waiting for data…</div>
-
-<pre id="debug">(no data yet)</pre>
+<pre id="out">loading…</pre>
 
 <script>
-/* ---------- helpers ---------- */
-function b64DecodeUnicode(str) {
-  return decodeURIComponent(escape(atob(str)));
-}
-
-/* ---------- main ---------- */
-try {
-  if (typeof projects_b64 === "undefined" || !projects_b64) {
-    throw "projects_b64 variable is missing or empty";
-  }
-
-  var jsonText = b64DecodeUnicode(projects_b64);
-  var data = JSON.parse(jsonText);
-
-  // expose globally if you want to reuse later
-  window.PROJECTS_JSON = data;
-
-  document.getElementById("status").textContent =
-    "✅ JSON loaded successfully";
-
-  document.getElementById("debug").textContent =
-    jsonText.substring(0, 500); // preview first chars only
-
-} catch (e) {
-  document.getElementById("status").textContent =
-    "❌ Error loading JSON";
-
-  document.getElementById("debug").textContent =
-    String(e);
-}
+document.getElementById("out").textContent =
+  "projects_b64 typeof = " + typeof projects_b64 + "\n\n" +
+  "value:\n" + (projects_b64 || "(empty)");
 </script>
 
 </body>
