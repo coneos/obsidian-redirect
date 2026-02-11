@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        input {
+            padding: 8px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        #output {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            min-height: 50px;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        #counter {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 JavaScript Test Page</h1>
+
+        <div class="test-section">
+            <h2>1. Basic DOM Manipulation</h2>
+            <button id="changeTextBtn">Change Text</button>
+            <button id="changeColorBtn">Change Color</button>
+            <p id="demoText">Click the buttons to test DOM manipulation!</p>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Event Listeners & Counters</h2>
+            <button id="incrementBtn">Increment Counter</button>
+            <button id="decrementBtn">Decrement Counter</button>
+            <button id="resetBtn">Reset</button>
+            <div id="counter">0</div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. User Input & Processing</h2>
+            <input type="text" id="nameInput" placeholder="Enter your name">
+            <button id="greetBtn">Greet Me!</button>
+            <div id="greeting"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Array Operations</h2>
+            <button id="generateArrayBtn">Generate Random Array</button>
+            <button id="sortArrayBtn">Sort Array</button>
+            <button id="reverseArrayBtn">Reverse Array</button>
+            <div id="arrayOutput"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. Async Operations</h2>
+            <button id="fetchDataBtn">Fetch Random Data</button>
+            <button id="timerBtn">Start 3-Second Timer</button>
+            <div id="asyncOutput"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Console Output</h2>
+            <button id="consoleLogBtn">Log to Console</button>
+            <p><em>Open browser DevTools (F12) to see console messages</em></p>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log('✅ JavaScript is loaded and running!');
+
+        // 1. Basic DOM Manipulation
+        const demoText = document.getElementById('demoText');
+        const changeTextBtn = document.getElementById('changeTextBtn');
+        const changeColorBtn = document.getElementById('changeColorBtn');
+
+        const messages = [
+            'JavaScript is working! 🎉',
+            'DOM manipulation successful! ✨',
+            'Click count increased! 🚀',
+            'Everything is functional! 💪'
+        ];
+        let messageIndex = 0;
+
+        changeTextBtn.addEventListener('click', () => {
+            demoText.textContent = messages[messageIndex % messages.length];
+            messageIndex++;
+            console.log('Text changed to:', demoText.textContent);
+        });
+
+        const colors = ['#667eea', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6'];
+        let colorIndex = 0;
+
+        changeColorBtn.addEventListener('click', () => {
+            demoText.style.color = colors[colorIndex % colors.length];
+            colorIndex++;
+            console.log('Color changed to:', colors[(colorIndex - 1) % colors.length]);
+        });
+
+        // 2. Counter functionality
+        let counter = 0;
+        const counterDisplay = document.getElementById('counter');
+        const incrementBtn = document.getElementById('incrementBtn');
+        const decrementBtn = document.getElementById('decrementBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function updateCounter() {
+            counterDisplay.textContent = counter;
+            console.log('Counter value:', counter);
+        }
+
+        incrementBtn.addEventListener('click', () => {
+            counter++;
+            updateCounter();
+        });
+
+        decrementBtn.addEventListener('click', () => {
+            counter--;
+            updateCounter();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            counter = 0;
+            updateCounter();
+        });
+
+        // 3. User Input
+        const nameInput = document.getElementById('nameInput');
+        const greetBtn = document.getElementById('greetBtn');
+        const greeting = document.getElementById('greeting');
+
+        greetBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                greeting.innerHTML = `<p class="success">Hello, ${name}! 👋 JavaScript is working perfectly!</p>`;
+                console.log('Greeted user:', name);
+            } else {
+                greeting.innerHTML = '<p style="color: red;">Please enter your name first!</p>';
+            }
+        });
+
+        // 4. Array Operations
+        let currentArray = [];
+        const arrayOutput = document.getElementById('arrayOutput');
+        const generateArrayBtn = document.getElementById('generateArrayBtn');
+        const sortArrayBtn = document.getElementById('sortArrayBtn');
+        const reverseArrayBtn = document.getElementById('reverseArrayBtn');
+
+        generateArrayBtn.addEventListener('click', () => {
+            currentArray = Array.from({length: 10}, () => Math.floor(Math.random() * 100));
+            arrayOutput.innerHTML = `<strong>Generated Array:</strong> [${currentArray.join(', ')}]`;
+            console.log('Generated array:', currentArray);
+        });
+
+        sortArrayBtn.addEventListener('click', () => {
+            if (currentArray.length > 0) {
+                currentArray.sort((a, b) => a - b);
+                arrayOutput.innerHTML = `<strong>Sorted Array:</strong> [${currentArray.join(', ')}]`;
+                console.log('Sorted array:', currentArray);
+            } else {
+                arrayOutput.innerHTML = '<p style="color: red;">Generate an array first!</p>';
+            }
+        });
+
+        reverseArrayBtn.addEventListener('click', () => {
+            if (currentArray.length > 0) {
+                currentArray.reverse();
+                arrayOutput.innerHTML = `<strong>Reversed Array:</strong> [${currentArray.join(', ')}]`;
+                console.log('Reversed array:', currentArray);
+            } else {
+                arrayOutput.innerHTML = '<p style="color: red;">Generate an array first!</p>';
+            }
+        });
+
+        // 5. Async Operations
+        const asyncOutput = document.getElementById('asyncOutput');
+        const fetchDataBtn = document.getElementById('fetchDataBtn');
+        const timerBtn = document.getElementById('timerBtn');
+
+        fetchDataBtn.addEventListener('click', async () => {
+            asyncOutput.innerHTML = '<p>Fetching data...</p>';
+            try {
+                const response = await fetch('https://api.github.com/zen');
+                const data = await response.text();
+                asyncOutput.innerHTML = `<p class="success">✅ Fetch successful!</p><p><em>"${data}"</em> - GitHub Zen</p>`;
+                console.log('Fetched data:', data);
+            } catch (error) {
+                asyncOutput.innerHTML = `<p style="color: red;">Fetch failed (might be blocked by CORS, but JS is working!): ${error.message}</p>`;
+                console.error('Fetch error:', error);
+            }
+        });
+
+        timerBtn.addEventListener('click', () => {
+            let seconds = 3;
+            asyncOutput.innerHTML = `<p>Timer: ${seconds} seconds remaining...</p>`;
+
+            const interval = setInterval(() => {
+                seconds--;
+                if (seconds > 0) {
+                    asyncOutput.innerHTML = `<p>Timer: ${seconds} seconds remaining...</p>`;
+                } else {
+                    asyncOutput.innerHTML = '<p class="success">⏰ Timer completed!</p>';
+                    clearInterval(interval);
+                }
+                console.log('Timer:', seconds);
+            }, 1000);
+        });
+
+        // Console logging test
+        const consoleLogBtn = document.getElementById('consoleLogBtn');
+        const output = document.getElementById('output');
+
+        consoleLogBtn.addEventListener('click', () => {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log('🔍 Console test at', timestamp);
+            console.log('Testing different console methods:');
+            console.info('ℹ️ Info message');
+            console.warn('⚠️ Warning message');
+            console.error('❌ Error message (this is just a test!)');
+            console.table([
+                {name: 'JavaScript', status: 'Working ✅'},
+                {name: 'DOM', status: 'Working ✅'},
+                {name: 'Events', status: 'Working ✅'}
+            ]);
+
+            output.innerHTML = `<p class="success">✅ Console messages logged at ${timestamp}. Check DevTools console (F12)!</p>`;
+        });
+
+        // Initial load message
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎉 Page loaded successfully!');
+            console.log('All event listeners attached and ready!');
+        });
+    </script>
+</body>
+</html>
