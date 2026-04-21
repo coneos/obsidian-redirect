@@ -1,175 +1,337 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
   <meta name="autotoolswebscreen"
         type="variablejs"
         id="projects_json"
         label="JSON Projects"
-        description="Base64-encoded JSON object keyed by project name, each value is an array of task title strings."
-        defaultValue="" />
+        description="Base64-encoded JSON object with project meta and tasks."
+        defaultValue=""/>
 
   <title>Projects</title>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
+  <style>
     :root {
-      color-scheme: dark;
-      --bg:        #080c14;
-      --surface:   #0f1520;
-      --surface2:  #151d2e;
-      --border:    rgba(255,255,255,.07);
-      --accent:    #4f8ef7;
-      --accent2:   #7b6ff0;
-      --green:     #34c759;
-      --text:      #dde6f8;
-      --muted:     rgba(221,230,248,.45);
-      --ok-bg:     rgba(52,199,89,.12);
-      --ok-border: rgba(52,199,89,.35);
-      --bad-bg:    rgba(235,87,87,.12);
-      --bad-border:rgba(235,87,87,.35);
-      --radius:    14px;
-      --mono: 'DM Mono', ui-monospace, monospace;
-      --head: 'Syne', system-ui, sans-serif;
+      --bg:       #07090f;
+      --s1:       #0d1117;
+      --s2:       #131921;
+      --s3:       #1a2332;
+      --border:   rgba(255,255,255,.06);
+      --border2:  rgba(255,255,255,.11);
+      --text:     #e8eef8;
+      --muted:    rgba(232,238,248,.4);
+      --muted2:   rgba(232,238,248,.65);
+      --accent:   #4f8ef7;
+      --r: 12px;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Outfit', sans-serif;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 14px; line-height: 1.55; min-height: 100vh; overscroll-behavior: none; }
-    .wrap { padding: 18px 14px 80px; max-width: 680px; margin: 0 auto; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    /* ── header ── */
-    header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
-    header h1 { font-family: var(--head); font-size: 28px; font-weight: 800; letter-spacing: -.5px; color: #fff; }
-    .count-badge { font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      overscroll-behavior: none;
+    }
 
-    /* ── status pill ── */
-    .status-row { margin-bottom: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); }
-    .pill.ok  { background: var(--ok-bg);  border-color: var(--ok-border); }
-    .pill.bad { background: var(--bad-bg); border-color: var(--bad-border); }
+    /* ── top bar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(7,9,15,.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .topbar-title {
+      font-family: var(--sans);
+      font-size: 17px; font-weight: 700;
+      color: #fff; flex: 1;
+      letter-spacing: -.3px;
+    }
+    .topbar-counts {
+      font-family: var(--mono);
+      font-size: 10px; color: var(--muted);
+      background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+    .btn-reload {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--s2);
+      border: 1px solid var(--border2);
+      color: var(--muted2);
+      font-family: var(--mono); font-size: 10px;
+      padding: 6px 10px; border-radius: 8px;
+      cursor: pointer; transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-reload:active { background: var(--s3); color: var(--text); }
+    .btn-reload svg { transition: transform .4s; }
+    .btn-reload.spinning svg { transform: rotate(360deg); }
+
+    /* ── status banner ── */
+    .status-bar {
+      padding: 6px 14px;
+      display: flex; gap: 6px; align-items: center;
+    }
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 999px;
+      font-family: var(--mono); font-size: 10px;
+      border: 1px solid var(--border); background: var(--s1);
+    }
+    .pill.ok  { background: rgba(52,199,89,.1);  border-color: rgba(52,199,89,.3);  color: #5edb7a; }
+    .pill.bad { background: rgba(235,87,87,.1);  border-color: rgba(235,87,87,.3);  color: #eb5757; }
 
     /* ── search ── */
-    .search-wrap { position: relative; margin-bottom: 16px; }
-    .search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); opacity: .4; pointer-events: none; }
-    input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 11px 12px 11px 38px; border-radius: var(--radius); font-family: var(--mono); font-size: 14px; outline: none; transition: border-color .15s; }
-    input[type="text"]:focus { border-color: var(--accent); }
+    .search-wrap {
+      padding: 0 14px 10px;
+      position: relative;
+    }
+    .search-icon {
+      position: absolute; left: 26px; top: 50%; transform: translateY(-50%);
+      opacity: .35; pointer-events: none;
+    }
+    input[type="text"] {
+      width: 100%;
+      background: var(--s1);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 12px 11px 38px;
+      border-radius: var(--r);
+      font-family: var(--mono); font-size: 13px;
+      outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    input:focus { border-color: var(--accent); background: var(--s2); }
     input::placeholder { color: var(--muted); }
 
     /* ── result meta ── */
-    .result-meta { font-size: 11px; color: var(--muted); margin-bottom: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    .meta-row {
+      padding: 0 14px 8px;
+      font-family: var(--mono); font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+
+    /* ── scroll area ── */
+    .scroll { padding: 0 14px 100px; }
 
     /* ── project card ── */
-    .project-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; transition: border-color .15s; }
-    .project-card:hover { border-color: rgba(255,255,255,.13); }
-    .project-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 15px; cursor: pointer; user-select: none; gap: 10px; }
-    .project-header:active { background: rgba(255,255,255,.02); }
-    .project-name { font-family: var(--head); font-size: 15px; font-weight: 700; color: #fff; flex: 1; line-height: 1.3; }
-    .project-name mark { background: rgba(79,142,247,.3); color: #fff; border-radius: 3px; padding: 0 1px; }
-    .task-count { font-size: 11px; color: var(--muted); white-space: nowrap; background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; }
-    .chevron { color: var(--muted); transition: transform .2s; flex-shrink: 0; }
+    .project-card {
+      margin-bottom: 10px;
+      border-radius: var(--r);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--s1);
+      transition: border-color .2s;
+    }
+
+    .project-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 14px;
+      cursor: pointer; user-select: none;
+      position: relative;
+    }
+    .project-header::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--proj-color, var(--accent));
+      border-radius: 3px 0 0 3px;
+    }
+
+    .proj-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
+    .proj-info { flex: 1; min-width: 0; }
+    .proj-title {
+      font-size: 14px; font-weight: 600; color: #fff;
+      line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .proj-title mark { background: rgba(79,142,247,.25); color: #fff; border-radius: 2px; padding: 0 1px; }
+    .proj-meta-row {
+      display: flex; gap: 5px; align-items: center; margin-top: 4px; flex-wrap: wrap;
+    }
+
+    /* ── mini pills ── */
+    .mpill {
+      font-family: var(--mono); font-size: 9px;
+      padding: 2px 7px; border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 500; letter-spacing: .03em;
+      white-space: nowrap;
+    }
+    /* status colors */
+    .mpill.completed   { background: rgba(52,199,89,.12); border-color: rgba(52,199,89,.3); color: #5edb7a; }
+    .mpill.in-progress { background: rgba(255,179,0,.12); border-color: rgba(255,179,0,.3);  color: #ffb300; }
+    .mpill.todo        { background: rgba(255,255,255,.05); border-color: var(--border);     color: var(--muted2); }
+    .mpill.blocked     { background: rgba(235,87,87,.12); border-color: rgba(235,87,87,.3);  color: #eb5757; }
+    /* priority */
+    .mpill.high   { background: rgba(235,87,87,.1);  border-color: rgba(235,87,87,.3);  color: #eb5757; }
+    .mpill.medium { background: rgba(255,179,0,.1);  border-color: rgba(255,179,0,.3);  color: #ffb300; }
+    .mpill.low    { background: rgba(52,199,89,.1);  border-color: rgba(52,199,89,.3);  color: #5edb7a; }
+    /* generic dim */
+    .mpill.dim    { background: rgba(255,255,255,.05); border-color: var(--border); color: var(--muted2); }
+
+    .proj-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .task-count-badge {
+      font-family: var(--mono); font-size: 10px;
+      color: var(--muted); background: var(--s2);
+      border: 1px solid var(--border);
+      border-radius: 999px; padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .chevron { color: var(--muted); transition: transform .22s; flex-shrink: 0; }
     .project-card.open .chevron { transform: rotate(90deg); }
 
     /* ── task list ── */
-    .task-list { display: none; border-top: 1px solid var(--border); padding: 4px 0 8px; }
+    .task-list {
+      display: none;
+      border-top: 1px solid var(--border);
+    }
     .project-card.open .task-list { display: block; }
 
+    /* ── task item ── */
     .task-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 15px; border-radius: 8px; margin: 2px 6px;
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
       cursor: pointer; user-select: none;
-      transition: background .12s;
+      transition: background .1s;
       position: relative;
     }
-    .task-item:active { background: rgba(79,142,247,.08); }
-    .task-item.pressing { background: rgba(79,142,247,.12); }
+    .task-item:last-child { border-bottom: none; }
+    .task-item.pressing { background: rgba(79,142,247,.07); }
 
-    .task-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .5; flex-shrink: 0; }
+    .task-status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 5px;
+    }
+    .dot-todo        { background: rgba(255,255,255,.2); border: 1.5px solid rgba(255,255,255,.25); }
+    .dot-in-progress { background: #ffb300; box-shadow: 0 0 6px rgba(255,179,0,.4); }
+    .dot-completed   { background: #5edb7a; }
+    .dot-blocked     { background: #eb5757; }
+
     .task-body { flex: 1; min-width: 0; }
-    .task-title { color: var(--text); font-size: 13px; line-height: 1.45; }
-    .task-title mark { background: rgba(79,142,247,.3); color: #fff; border-radius: 3px; padding: 0 1px; }
-    .task-hint { font-size: 10px; color: var(--muted); margin-top: 1px; }
+    .task-title-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+    .task-name {
+      font-size: 13px; font-weight: 500; color: var(--text);
+      line-height: 1.4; flex: 1;
+    }
+    .task-name mark { background: rgba(79,142,247,.25); color: #fff; border-radius: 2px; padding: 0 1px; }
 
-    .task-arrow { color: var(--muted); opacity: .4; flex-shrink: 0; }
+    .task-pills { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; align-items: center; }
 
-    .no-tasks { padding: 10px 15px; color: var(--muted); font-size: 13px; }
+    /* progress bar */
+    .progress-wrap {
+      margin-top: 6px;
+      height: 3px; border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), #7b6ff0);
+      transition: width .3s;
+    }
 
-    /* ── empty state ── */
-    .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
-    .empty .emoji { font-size: 36px; margin-bottom: 10px; }
-    .empty p { font-size: 14px; }
+    .task-dates {
+      font-family: var(--mono); font-size: 9px; color: var(--muted);
+      margin-top: 5px; display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .task-dates .overdue { color: #eb5757; }
+    .task-dates .soon    { color: #ffb300; }
+
+    .task-hint {
+      font-family: var(--mono); font-size: 9px; color: var(--muted);
+      margin-top: 4px; opacity: .7;
+    }
+
+    .task-arrow { color: var(--muted); opacity: .3; flex-shrink: 0; margin-top: 3px; }
+
+    /* ── empty states ── */
+    .empty {
+      text-align: center; padding: 50px 20px; color: var(--muted);
+    }
+    .empty .emoji { font-size: 32px; margin-bottom: 10px; }
+    .empty p { font-size: 13px; }
+    .no-tasks { padding: 12px 14px; color: var(--muted); font-size: 12px; font-family: var(--mono); }
 
     /* ── context menu ── */
     .ctx-overlay {
-      position: fixed; inset: 0; z-index: 100;
-      background: rgba(0,0,0,.55);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       display: flex; align-items: flex-end; justify-content: center;
-      padding: 0 12px 24px;
+      padding: 0 10px 20px;
       opacity: 0; pointer-events: none;
       transition: opacity .2s;
     }
     .ctx-overlay.show { opacity: 1; pointer-events: all; }
 
     .ctx-sheet {
-      width: 100%; max-width: 480px;
-      background: var(--surface2);
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 20px;
-      overflow: hidden;
-      transform: translateY(20px);
-      transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+      width: 100%; max-width: 500px;
+      background: #111827;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 20px; overflow: hidden;
+      transform: translateY(24px);
+      transition: transform .28s cubic-bezier(.34,1.4,.64,1);
     }
     .ctx-overlay.show .ctx-sheet { transform: translateY(0); }
 
     .ctx-header {
-      padding: 16px 18px 12px;
-      border-bottom: 1px solid var(--border);
+      padding: 16px 18px 13px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      position: relative;
     }
-    .ctx-task-name {
-      font-family: var(--head);
-      font-size: 15px; font-weight: 700; color: #fff;
-      line-height: 1.3;
-      margin-bottom: 3px;
-    }
-    .ctx-project-name {
-      font-size: 11px; color: var(--muted);
-    }
+    .ctx-proj { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .06em; }
+    .ctx-task { font-size: 15px; font-weight: 600; color: #fff; line-height: 1.3; }
+    .ctx-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
 
-    .ctx-actions { padding: 6px 0 6px; }
-
+    .ctx-actions { padding: 6px 0; }
     .ctx-btn {
       display: flex; align-items: center; gap: 14px;
-      width: 100%; padding: 14px 18px;
+      width: 100%; padding: 13px 18px;
       background: none; border: none;
-      color: var(--text); font-family: var(--mono); font-size: 14px;
+      color: var(--text); font-family: var(--sans); font-size: 14px;
       cursor: pointer; text-align: left;
       transition: background .1s;
     }
     .ctx-btn:active { background: rgba(255,255,255,.04); }
-    .ctx-btn .ctx-icon {
-      width: 36px; height: 36px; border-radius: 10px;
+    .ctx-icon {
+      width: 38px; height: 38px; border-radius: 11px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 17px; flex-shrink: 0;
+      font-size: 18px; flex-shrink: 0;
     }
-    .ctx-btn.track  .ctx-icon { background: rgba(52,199,89,.15);  }
-    .ctx-btn.edit   .ctx-icon { background: rgba(79,142,247,.15); }
-    .ctx-btn.time   .ctx-icon { background: rgba(123,111,240,.15);}
+    .ctx-btn.track .ctx-icon  { background: rgba(52,199,89,.15); }
+    .ctx-btn.edit  .ctx-icon  { background: rgba(79,142,247,.15); }
+    .ctx-btn.time  .ctx-icon  { background: rgba(123,111,240,.15); }
+    .ctx-btn-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
-    .ctx-btn-label { flex: 1; }
-    .ctx-btn-title { font-size: 14px; color: #fff; font-weight: 500; }
-    .ctx-btn-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .ctx-divider { height: 1px; background: rgba(255,255,255,.06); margin: 2px 0; }
 
     .ctx-cancel {
-      margin: 0 10px 2px;
+      margin: 6px 10px 4px;
       display: block; width: calc(100% - 20px);
-      padding: 14px; border-radius: 14px;
+      padding: 13px; border-radius: 12px;
       background: rgba(255,255,255,.05);
-      border: 1px solid var(--border);
-      color: var(--muted); font-family: var(--mono); font-size: 13px;
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--muted2); font-family: var(--sans); font-size: 14px;
       cursor: pointer; text-align: center;
       transition: background .1s;
     }
@@ -177,86 +339,121 @@
 
     /* ── toast ── */
     #toast {
-      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-      background: var(--green); color: #fff;
-      font-family: var(--mono); font-size: 13px;
-      padding: 10px 20px; border-radius: 999px;
-      max-width: 80vw; text-align: center; word-break: break-word;
-      opacity: 0; transition: opacity .2s; z-index: 999; pointer-events: none;
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(0);
+      font-family: var(--mono); font-size: 12px;
+      padding: 9px 18px; border-radius: 999px;
+      max-width: 82vw; text-align: center;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      opacity: 0; pointer-events: none; z-index: 999;
+      transition: opacity .2s, transform .2s;
+      color: #fff;
     }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* ── debug ── */
-    .debug-card { margin-top: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    .debug-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-    .debug-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-    .btn-sm { background: rgba(255,255,255,.05); border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; }
-    .btn-sm:active { opacity: .7; }
-    #debug { padding: 10px 14px; font-size: 11px; color: var(--muted); white-space: pre-wrap; word-break: break-word; max-height: 180px; overflow-y: auto; }
+    .debug-wrap { padding: 0 14px 30px; margin-top: 10px; }
+    .debug-card {
+      background: var(--s1); border: 1px solid var(--border);
+      border-radius: var(--r); overflow: hidden;
+    }
+    .debug-hdr {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+    }
+    .debug-lbl { font-family: var(--mono); font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .btn-sm {
+      background: rgba(255,255,255,.05); border: 1px solid var(--border);
+      color: var(--muted); font-family: var(--mono); font-size: 9px;
+      padding: 3px 8px; border-radius: 6px; cursor: pointer;
+    }
+    #debug {
+      padding: 8px 12px; font-family: var(--mono); font-size: 10px;
+      color: var(--muted); white-space: pre-wrap; word-break: break-word;
+      max-height: 140px; overflow-y: auto;
+    }
+
+    /* ── animations ── */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .project-card { animation: fadeSlideIn .25s ease both; }
   </style>
 </head>
-
 <body>
-<div class="wrap">
 
-  <header>
-    <h1>Projects</h1>
-    <span class="count-badge" id="headerCount">0 projects</span>
-  </header>
-
-  <div class="status-row">
-    <span class="pill bad" id="injectPill">⛔ not received</span>
-  </div>
-
-  <div class="search-wrap">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+<!-- top bar -->
+<div class="topbar">
+  <div class="topbar-title">Projects</div>
+  <span class="topbar-counts" id="headerCounts">— · —</span>
+  <button class="btn-reload" id="btnReload" onclick="sendReload()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+      <path d="M3 3v5h5"/>
     </svg>
-    <input id="search" type="text" placeholder="Search projects and tasks…" autocomplete="off" />
-  </div>
+    Reload
+  </button>
+</div>
 
-  <div class="result-meta" id="resultMeta"></div>
-  <div id="projectList"></div>
+<!-- status + search -->
+<div class="status-bar">
+  <span class="pill bad" id="injectPill">⛔ not received</span>
+</div>
+<div class="search-wrap">
+  <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+  </svg>
+  <input id="search" type="text" placeholder="Search projects, tasks, tags…" autocomplete="off"/>
+</div>
+<div class="meta-row" id="metaRow"></div>
 
+<!-- project list -->
+<div class="scroll" id="projectList"></div>
+
+<!-- debug -->
+<div class="debug-wrap">
   <div class="debug-card">
-    <div class="debug-header">
-      <span class="debug-label">Debug</span>
+    <div class="debug-hdr">
+      <span class="debug-lbl">Debug</span>
       <button class="btn-sm" id="btnClearDebug">Clear</button>
     </div>
     <pre id="debug"></pre>
   </div>
-
 </div>
 
 <!-- toast -->
 <div id="toast"></div>
 
-<!-- context menu -->
+<!-- context sheet -->
 <div class="ctx-overlay" id="ctxOverlay" onclick="closeCtx(event)">
-  <div class="ctx-sheet" onclick="event.stopPropagation()">
+  <div class="ctx-sheet">
     <div class="ctx-header">
-      <div class="ctx-task-name" id="ctxTaskName"></div>
-      <div class="ctx-project-name" id="ctxProjectName"></div>
+      <div class="ctx-proj" id="ctxProjName"></div>
+      <div class="ctx-task" id="ctxTaskName"></div>
+      <div class="ctx-pills" id="ctxPills"></div>
     </div>
     <div class="ctx-actions">
       <button class="ctx-btn track" onclick="ctxAction('Start Tracking')">
         <div class="ctx-icon">▶️</div>
-        <div class="ctx-btn-label">
-          <div class="ctx-btn-title">Start Tracking</div>
-          <div class="ctx-btn-sub">Begin a time entry for this task</div>
+        <div>
+          <div>Start Tracking</div>
+          <div class="ctx-btn-sub">Begin a time entry now</div>
         </div>
       </button>
+      <div class="ctx-divider"></div>
       <button class="ctx-btn edit" onclick="ctxAction('Edit Task Details')">
         <div class="ctx-icon">✏️</div>
-        <div class="ctx-btn-label">
-          <div class="ctx-btn-title">Edit Task Details</div>
-          <div class="ctx-btn-sub">Update task name, notes or status</div>
+        <div>
+          <div>Edit Task Details</div>
+          <div class="ctx-btn-sub">Update name, priority, dates</div>
         </div>
       </button>
+      <div class="ctx-divider"></div>
       <button class="ctx-btn time" onclick="ctxAction('Edit Time Entries')">
         <div class="ctx-icon">🕐</div>
-        <div class="ctx-btn-label">
-          <div class="ctx-btn-title">Edit Time Entries</div>
+        <div>
+          <div>Edit Time Entries</div>
           <div class="ctx-btn-sub">View and adjust tracked time</div>
         </div>
       </button>
@@ -266,70 +463,112 @@
 </div>
 
 <script>
+/* ── debug ── */
 const T0 = performance.now();
 function dbg(label, extra) {
   const ms = Math.round(performance.now() - T0);
-  const line = extra !== undefined ? `${ms}ms  ${label}  → ${extra}` : `${ms}ms  ${label}`;
   const el = document.getElementById("debug");
-  if (el) el.textContent += (el.textContent ? "\n" : "") + line;
+  if (el) el.textContent += (el.textContent ? "\n" : "") + `${ms}ms  ${label}` + (extra !== undefined ? `  → ${extra}` : "");
 }
 window.addEventListener("error", e => dbg("error", e.message));
-window.addEventListener("unhandledrejection", e => dbg("rejection", String(e.reason)));
-dbg("script start");
+window.addEventListener("unhandledrejection", e => dbg("reject", String(e.reason)));
+dbg("start");
 
+/* ── state ── */
 let PROJECTS = {};
+let CTX = {};
 
-// ── current context item ──
-let CTX = { task: "", project: "", slug: "" };
-
-// ── helpers ──
-function highlight(text, q) {
-  if (!q) return escHtml(text);
-  const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
-  return escHtml(text).replace(re, "<mark>$1</mark>");
-}
-function escHtml(s) {
+/* ── utils ── */
+function esc(s) {
   return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
-function escAttr(s) {
+function escA(s) {
   return String(s ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
-function slugify(s) {
-  // derive a filename slug from the task title (mirrors shell script naming)
-  return String(s ?? "").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+function stripQ(s) {
+  return String(s ?? "").replace(/^["']+|["']+$/g,"").trim();
 }
-function stripQuotes(s) {
-  return String(s ?? "").replace(/^["']+|["']+$/g, "").trim();
+function hi(text, q) {
+  if (!q) return esc(text);
+  return esc(text).replace(new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","gi"),"<mark>$1</mark>");
 }
 
-// ── webhook ──
-function sendWebhook(task, project, slug, action) {
-  const url = "https://trigger.macrodroid.com/db488391-3aea-466f-915e-2a0bdb5249d1/track"
-    + "?task="    + encodeURIComponent(task)
-    + "&project=" + encodeURIComponent(project)
-    + "&slug="    + encodeURIComponent(slug)
-    + "&action="  + encodeURIComponent(action);
+/* ── date helpers ── */
+function today() {
+  const d = new Date(); d.setHours(0,0,0,0); return d;
+}
+function parseDate(s) {
+  if (!s) return null;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return new Date(+m[1], +m[2]-1, +m[3]);
+}
+function daysFrom(d) {
+  return Math.round((d - today()) / 86400000);
+}
+function fmtDate(s) {
+  const d = parseDate(s); if (!d) return null;
+  const diff = daysFrom(d);
+  if (diff === 0) return { label: "Today", cls: "soon" };
+  if (diff === 1) return { label: "Tomorrow", cls: "soon" };
+  if (diff < 0)  return { label: `${Math.abs(diff)}d overdue`, cls: "overdue" };
+  if (diff <= 7) return { label: `${diff}d left`, cls: "soon" };
+  return { label: s, cls: "" };
+}
 
+/* ── status/priority helpers ── */
+function statusLabel(s) {
+  if (!s) return "";
+  return { "in-progress": "In Progress", "todo": "To Do", "completed": "Done", "blocked": "Blocked" }[s] || s;
+}
+function dotClass(s) {
+  return { "in-progress": "dot-in-progress", "completed": "dot-completed", "blocked": "dot-blocked" }[s] || "dot-todo";
+}
+
+/* ── webhook ── */
+const WEBHOOK = "https://trigger.macrodroid.com/db488391-3aea-466f-915e-2a0bdb5249d1/track";
+function sendWebhook(params) {
+  const url = WEBHOOK + "?" + Object.entries(params).map(([k,v]) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
   fetch(url)
-    .then(() => dbg("webhook ok", action + " · " + task.slice(0, 40)))
-    .catch(err => dbg("webhook error", err.message));
+    .then(() => dbg("webhook ok", params["Task Action"]))
+    .catch(e => dbg("webhook err", e.message));
+}
+function sendReload() {
+  const btn = document.getElementById("btnReload");
+  btn.classList.add("spinning");
+  setTimeout(() => btn.classList.remove("spinning"), 600);
+  sendWebhook({ "Task Action": "Reload Projects" });
+  showToast("🔄  Reloading projects…", "#4f8ef7");
+  dbg("reload requested");
 }
 
-// ── toast ──
-function showToast(msg, color) {
+/* ── toast ── */
+function showToast(msg, bg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
-  t.style.background = color || "var(--green)";
-  t.style.opacity = "1";
-  clearTimeout(t._hide);
-  t._hide = setTimeout(() => { t.style.opacity = "0"; }, 2200);
+  t.style.background = bg || "#34c759";
+  clearTimeout(t._h);
+  t.classList.add("show");
+  t._h = setTimeout(() => t.classList.remove("show"), 2400);
 }
 
-// ── context menu ──
-function openCtx(task, project) {
-  CTX = { task, project, slug: slugify(task) };
-  document.getElementById("ctxTaskName").textContent    = task;
-  document.getElementById("ctxProjectName").textContent = project;
+/* ── context menu ── */
+function openCtx(task, projName) {
+  CTX = { task, projName };
+  document.getElementById("ctxTaskName").textContent = task.title;
+  document.getElementById("ctxProjName").textContent = projName;
+
+  // pills in context header
+  const pills = [];
+  if (task.status)   pills.push(`<span class="mpill ${task.status}">${statusLabel(task.status)}</span>`);
+  if (task.priority) pills.push(`<span class="mpill ${task.priority}">${task.priority.toUpperCase()}</span>`);
+  if (task.due) {
+    const d = fmtDate(task.due);
+    if (d) pills.push(`<span class="mpill dim ${d.cls}">📅 ${d.label}</span>`);
+  }
+  if (task.estimate) pills.push(`<span class="mpill dim">⏱ ${task.estimate}m</span>`);
+  document.getElementById("ctxPills").innerHTML = pills.join("");
+
   document.getElementById("ctxOverlay").classList.add("show");
 }
 function closeCtx(e) {
@@ -338,188 +577,232 @@ function closeCtx(e) {
 }
 function ctxAction(action) {
   document.getElementById("ctxOverlay").classList.remove("show");
-  sendWebhook(CTX.task, CTX.project, CTX.slug, action);
-  const icons = { "Start Tracking": "▶️", "Edit Task Details": "✏️", "Edit Time Entries": "🕐" };
-  showToast(icons[action] + "  " + action, action === "Start Tracking" ? "var(--green)" : "var(--accent)");
-  dbg("ctx action", action);
+  sendWebhook({
+    "Task Name":    CTX.task.title,
+    "Task Path":    CTX.task.path,
+    "Project Name": CTX.projName,
+    "Task Action":  action
+  });
+  const icons = { "Start Tracking": ["▶️ Tracking", "#34c759"], "Edit Task Details": ["✏️ Editing", "#4f8ef7"], "Edit Time Entries": ["🕐 Time Entries", "#7b6ff0"] };
+  const [label, color] = icons[action] || [action, "#4f8ef7"];
+  showToast(`${label}: ${CTX.task.title}`, color);
 }
 
-// ── long press detection ──
-const LONG_MS = 500;
-let _lpTimer = null;
-let _lpFired  = false;
-
-function lpStart(el) {
+/* ── long press ── */
+const LP_MS = 480;
+let _lp = null, _lpFired = false;
+function lpStart(el, task, projName) {
   _lpFired = false;
   el.classList.add("pressing");
-  _lpTimer = setTimeout(() => {
+  _lp = setTimeout(() => {
     _lpFired = true;
     el.classList.remove("pressing");
-    navigator.vibrate && navigator.vibrate(40);
-    openCtx(el.dataset.task, el.dataset.project);
-  }, LONG_MS);
+    navigator.vibrate && navigator.vibrate(45);
+    openCtx(task, projName);
+  }, LP_MS);
 }
-function lpEnd(el) {
-  clearTimeout(_lpTimer);
+function lpEnd(el, task, projName) {
+  clearTimeout(_lp);
   el.classList.remove("pressing");
   if (!_lpFired) {
-    // short tap → Start Tracking immediately
-    const task    = el.dataset.task;
-    const project = el.dataset.project;
-    const slug    = slugify(task);
-    sendWebhook(task, project, slug, "Start Tracking");
-    showToast("▶️  Tracking: " + task);
-    dbg("tap", task.slice(0, 50));
+    // tap = Start Tracking immediately
+    sendWebhook({
+      "Task Name":    task.title,
+      "Task Path":    task.path,
+      "Project Name": projName,
+      "Task Action":  "Start Tracking"
+    });
+    showToast("▶️  " + task.title, "#34c759");
+    dbg("tap→track", task.title.slice(0,40));
   }
 }
 function lpCancel(el) {
-  clearTimeout(_lpTimer);
+  clearTimeout(_lp);
   el.classList.remove("pressing");
 }
 
-// ── render ──
+/* ── render ── */
 function render(q) {
   const list = document.getElementById("projectList");
-  const meta = document.getElementById("resultMeta");
+  const metaRow = document.getElementById("metaRow");
   q = (q || "").trim().toLowerCase();
 
-  const projectNames = Object.keys(PROJECTS);
-  if (projectNames.length === 0) {
+  const names = Object.keys(PROJECTS);
+  if (!names.length) {
     list.innerHTML = `<div class="empty"><div class="emoji">📭</div><p>No projects loaded.</p></div>`;
-    meta.textContent = "";
+    metaRow.textContent = "";
     return;
   }
 
-  const filtered = projectNames.map(name => {
-    const tasks = PROJECTS[name] || [];
-    if (!q) return { name, tasks, matchedTasks: tasks };
-    const nameMatch = name.toLowerCase().includes(q);
-    const matchedTasks = tasks.filter(t => t.toLowerCase().includes(q));
-    if (!nameMatch && matchedTasks.length === 0) return null;
-    return { name, tasks, matchedTasks: nameMatch ? tasks : matchedTasks };
+  const filtered = names.map(name => {
+    const { meta, tasks } = PROJECTS[name];
+    if (!q) return { name, meta, tasks, shown: tasks };
+    const nm = name.toLowerCase().includes(q);
+    const shown = tasks.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      (t.tags||[]).some(g => g.toLowerCase().includes(q)) ||
+      (t.status||"").toLowerCase().includes(q) ||
+      (t.priority||"").toLowerCase().includes(q)
+    );
+    if (!nm && !shown.length) return null;
+    return { name, meta, tasks, shown: nm ? tasks : shown };
   }).filter(Boolean);
 
-  const totalTasks = filtered.reduce((s, p) => s + p.tasks.length, 0);
-  meta.textContent = q
-    ? `${filtered.length} project${filtered.length!==1?"s":""} · ${filtered.reduce((s,p)=>s+p.matchedTasks.length,0)} tasks matched`
-    : `${filtered.length} project${filtered.length!==1?"s":""} · ${totalTasks} task${totalTasks!==1?"s":""}`;
+  const totalP = filtered.length;
+  const totalT = filtered.reduce((s,p) => s + p.shown.length, 0);
+  metaRow.textContent = q
+    ? `${totalP} project${totalP!==1?"s":""} · ${totalT} task${totalT!==1?"s":""} matched`
+    : `${totalP} project${totalP!==1?"s":""} · ${totalT} task${totalT!==1?"s":""}`;
 
-  if (filtered.length === 0) {
-    list.innerHTML = `<div class="empty"><div class="emoji">🔍</div><p>No results for "<b>${escHtml(q)}</b>"</p></div>`;
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty"><div class="emoji">🔍</div><p>No results for "<b>${esc(q)}</b>"</p></div>`;
     return;
   }
 
-  list.innerHTML = filtered.map(({ name, tasks, matchedTasks }) => {
-    const tasksHtml = matchedTasks.length === 0
-      ? `<div class="no-tasks">No tasks</div>`
-      : matchedTasks.map(t => `
-          <div class="task-item"
-               data-task="${escAttr(t)}"
-               data-project="${escAttr(name)}"
-               ontouchstart="lpStart(this)"
-               ontouchend="lpEnd(this)"
-               ontouchcancel="lpCancel(this)"
-               onmousedown="lpStart(this)"
-               onmouseup="lpEnd(this)"
-               onmouseleave="lpCancel(this)">
-            <div class="task-dot"></div>
-            <div class="task-body">
-              <div class="task-title">${highlight(t, q)}</div>
-              <div class="task-hint">Tap to track · Hold for options</div>
-            </div>
-            <svg class="task-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
-          </div>`).join("");
+  list.innerHTML = filtered.map(({ name, meta, tasks, shown }, pi) => {
+    const color = meta.color || "#4f8ef7";
+    const icon  = meta.icon  || "📁";
+    const statusCls = (meta.status || "todo").replace(/\s+/g,"-");
 
-    return `
-      <div class="project-card${q ? " open" : ""}" onclick="toggleCard(this)">
-        <div class="project-header">
-          <div class="project-name">${highlight(name, q)}</div>
-          <span class="task-count">${tasks.length} task${tasks.length!==1?"s":""}</span>
-          <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="m9 18 6-6-6-6"/>
-          </svg>
+    const taskRows = shown.length ? shown.map(t => {
+      // date row
+      const startD = t.start ? fmtDate(t.start) : null;
+      const dueD   = t.due   ? fmtDate(t.due)   : null;
+      const dateStr = [
+        startD ? `<span class="${startD.cls}">▷ ${startD.label}</span>` : "",
+        dueD   ? `<span class="${dueD.cls}">⬤ ${dueD.label}</span>`   : ""
+      ].filter(Boolean).join("  ");
+
+      const progress = parseInt(t.progress) || 0;
+      const assigneeStr = (t.assignees||[]).map(a => `<span class="mpill dim">${esc(a)}</span>`).join("");
+      const tagStr = (t.tags||[]).slice(0,3).map(g => `<span class="mpill dim">#${esc(g)}</span>`).join("");
+
+      return `<div class="task-item"
+          data-idx="${pi}"
+          data-task='${escA(JSON.stringify(t))}'
+          data-proj="${escA(name)}"
+          ontouchstart="bindLP(this)"
+          onmousedown="bindLP(this)">
+        <div class="task-status-dot ${dotClass(t.status)}"></div>
+        <div class="task-body">
+          <div class="task-name">${hi(t.title, q)}</div>
+          <div class="task-pills">
+            ${t.status   ? `<span class="mpill ${t.status}">${statusLabel(t.status)}</span>` : ""}
+            ${t.priority ? `<span class="mpill ${t.priority}">${t.priority.toUpperCase()}</span>` : ""}
+            ${t.estimate ? `<span class="mpill dim">⏱ ${t.estimate}m</span>` : ""}
+            ${assigneeStr}
+            ${tagStr}
+          </div>
+          ${progress > 0 ? `<div class="progress-wrap"><div class="progress-bar" style="width:${progress}%"></div></div>` : ""}
+          ${dateStr ? `<div class="task-dates">${dateStr}</div>` : ""}
+          <div class="task-hint">Tap to track · Hold for options</div>
         </div>
-        <div class="task-list">${tasksHtml}</div>
+        <svg class="task-arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
       </div>`;
+    }).join("") : `<div class="no-tasks">No tasks</div>`;
+
+    return `<div class="project-card${q?" open":""}" style="--proj-color:${color}; animation-delay:${pi*40}ms">
+      <div class="project-header" onclick="toggleCard(this.parentElement)">
+        <div class="proj-icon">${icon}</div>
+        <div class="proj-info">
+          <div class="proj-title">${hi(name, q)}</div>
+          <div class="proj-meta-row">
+            <span class="mpill ${statusCls}">${statusLabel(meta.status)}</span>
+            ${meta.client    ? `<span class="mpill dim">👤 ${esc(meta.client)}</span>` : ""}
+            ${meta.portfolio ? `<span class="mpill dim">📂 ${esc(meta.portfolio)}</span>` : ""}
+            ${meta.owner     ? `<span class="mpill dim">${esc(meta.owner)}</span>` : ""}
+          </div>
+        </div>
+        <div class="proj-right">
+          <span class="task-count-badge">${tasks.length} task${tasks.length!==1?"s":""}</span>
+          <svg class="chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      </div>
+      <div class="task-list">${taskRows}</div>
+    </div>`;
   }).join("");
 
+  // bind long-press after render
+  document.querySelectorAll(".task-item").forEach(el => {
+    el._bound = false;
+  });
+
   dbg("render", `${filtered.length} projects`);
+}
+
+function bindLP(el) {
+  if (el._bound) return;
+  el._bound = true;
+  const task = JSON.parse(el.dataset.task);
+  const proj = el.dataset.proj;
+  lpStart(el, task, proj);
+  const up = () => { lpEnd(el, task, proj); cleanup(); };
+  const cancel = () => { lpCancel(el); cleanup(); };
+  function cleanup() {
+    el.removeEventListener("touchend",   up);
+    el.removeEventListener("touchcancel",cancel);
+    el.removeEventListener("mouseup",    up);
+    el.removeEventListener("mouseleave", cancel);
+    el._bound = false;
+  }
+  el.addEventListener("touchend",    up,     { once: true });
+  el.addEventListener("touchcancel", cancel, { once: true });
+  el.addEventListener("mouseup",     up,     { once: true });
+  el.addEventListener("mouseleave",  cancel, { once: true });
 }
 
 function toggleCard(card) {
   card.classList.toggle("open");
 }
 
-// ── load ──
+/* ── load ── */
 function load() {
-  dbg("load start");
+  dbg("load");
   let b64 = "";
   try { b64 = String(typeof projects_json !== "undefined" && projects_json != null ? projects_json : ""); } catch(e) { b64 = ""; }
-  dbg("variable", `len=${b64.length}`);
+  dbg("var", `len=${b64.length}`);
 
   const pill = document.getElementById("injectPill");
-  const injected = b64.length > 0 && !b64.includes("{projects_json}");
-
-  if (!injected) {
-    pill.className = "pill bad";
-    pill.textContent = "⛔ not received";
-    dbg("stop", "no variable");
-    render("");
-    return;
+  if (!b64.length || b64.includes("{projects_json}")) {
+    pill.className = "pill bad"; pill.textContent = "⛔ not received";
+    render(""); return;
   }
 
-  let jsonStr = "";
+  let json = "";
   try {
-    const clean = b64.replace(/\s+/g, "");
-    const bin = atob(clean);
+    const bin = atob(b64.replace(/\s+/g,""));
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    jsonStr = new TextDecoder("utf-8").decode(bytes);
-    dbg("b64 decode ok", `jsonLen=${jsonStr.length}`);
-  } catch(e) {
-    pill.className = "pill bad";
-    pill.textContent = "⛔ Base64 decode error";
-    dbg("decode error", e.message);
-    render("");
-    return;
-  }
+    json = new TextDecoder("utf-8").decode(bytes);
+    dbg("decoded", `${json.length}ch`);
+  } catch(e) { pill.className="pill bad"; pill.textContent="⛔ decode error"; dbg("decode err",e.message); render(""); return; }
 
   let parsed;
-  try {
-    parsed = JSON.parse(jsonStr);
-    dbg("parse ok", `${Object.keys(parsed).length} projects`);
-  } catch(e) {
-    pill.className = "pill bad";
-    pill.textContent = "⛔ JSON parse error";
-    dbg("parse error", e.message);
-    render("");
-    return;
-  }
+  try { parsed = JSON.parse(json); dbg("parsed", `${Object.keys(parsed).length} projects`); }
+  catch(e) { pill.className="pill bad"; pill.textContent="⛔ JSON error"; dbg("json err",e.message); render(""); return; }
 
-  // Strip leading/trailing quotes from project names
   PROJECTS = {};
   for (const [k, v] of Object.entries(parsed)) {
-    PROJECTS[stripQuotes(k)] = v;
+    PROJECTS[stripQ(k)] = v;
   }
 
   const pCount = Object.keys(PROJECTS).length;
-  const tCount = Object.values(PROJECTS).reduce((s, a) => s + a.length, 0);
+  const tCount = Object.values(PROJECTS).reduce((s,p) => s + (p.tasks||[]).length, 0);
   pill.className = "pill ok";
   pill.textContent = `✅ ${pCount} project${pCount!==1?"s":""} · ${tCount} tasks`;
-  document.getElementById("headerCount").textContent = `${pCount} project${pCount!==1?"s":""}`;
+  document.getElementById("headerCounts").textContent = `${pCount}P · ${tCount}T`;
   render("");
-  dbg("load done");
+  dbg("done");
 }
 
-// ── events ──
-let __t;
+/* ── events ── */
+let __st;
 document.getElementById("search").addEventListener("input", e => {
-  clearTimeout(__t);
-  __t = setTimeout(() => render(e.target.value), 80);
+  clearTimeout(__st);
+  __st = setTimeout(() => render(e.target.value), 90);
 });
 document.getElementById("btnClearDebug").addEventListener("click", () => {
-  document.getElementById("debug").textContent = "";
-  dbg("cleared");
+  document.getElementById("debug").textContent = ""; dbg("cleared");
 });
 
 load();
