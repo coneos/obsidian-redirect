@@ -140,6 +140,9 @@ function highlight(text, q) {
 function escHtml(s) {
   return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
+function escAttr(s) {
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
 
 function render(q) {
   const list = document.getElementById("projectList");
@@ -176,7 +179,10 @@ function render(q) {
     const tasksHtml = matchedTasks.length === 0
       ? `<div class="no-tasks">No tasks</div>`
       : matchedTasks.map(t => `
-          <div class="task-item" onclick="onTaskClick(event, ${JSON.stringify(t)}, ${JSON.stringify(name)})">
+          <div class="task-item"
+               data-task="${escAttr(t)}"
+               data-project="${escAttr(name)}"
+               onclick="onTaskClick(event, this)">
             <div class="task-dot"></div>
             <div class="task-title">${highlight(t, q)}</div>
           </div>`).join("");
@@ -201,8 +207,11 @@ function toggleCard(card) {
   card.classList.toggle("open");
 }
 
-function onTaskClick(e, taskName, projectName) {
+function onTaskClick(e, el) {
   e.stopPropagation(); // don't toggle the card
+
+  const taskName    = el.dataset.task;
+  const projectName = el.dataset.project;
 
   const url = "https://trigger.macrodroid.com/db488391-3aea-466f-915e-2a0bdb5249d1/track"
     + "?task=" + encodeURIComponent(taskName)
