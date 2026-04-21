@@ -20,8 +20,11 @@
       color-scheme: dark;
       --bg:        #080c14;
       --surface:   #0f1520;
+      --surface2:  #151d2e;
       --border:    rgba(255,255,255,.07);
       --accent:    #4f8ef7;
+      --accent2:   #7b6ff0;
+      --green:     #34c759;
       --text:      #dde6f8;
       --muted:     rgba(221,230,248,.45);
       --ok-bg:     rgba(52,199,89,.12);
@@ -33,27 +36,32 @@
       --head: 'Syne', system-ui, sans-serif;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 14px; line-height: 1.55; min-height: 100vh; }
-    .wrap { padding: 18px 14px 60px; max-width: 680px; margin: 0 auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); font-family: var(--mono); font-size: 14px; line-height: 1.55; min-height: 100vh; overscroll-behavior: none; }
+    .wrap { padding: 18px 14px 80px; max-width: 680px; margin: 0 auto; }
 
+    /* ── header ── */
     header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
     header h1 { font-family: var(--head); font-size: 28px; font-weight: 800; letter-spacing: -.5px; color: #fff; }
-    header .count-badge { font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; }
+    .count-badge { font-family: var(--mono); font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; }
 
+    /* ── status pill ── */
     .status-row { margin-bottom: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .pill { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border); background: var(--surface); }
     .pill.ok  { background: var(--ok-bg);  border-color: var(--ok-border); }
     .pill.bad { background: var(--bad-bg); border-color: var(--bad-border); }
 
+    /* ── search ── */
     .search-wrap { position: relative; margin-bottom: 16px; }
     .search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); opacity: .4; pointer-events: none; }
     input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 11px 12px 11px 38px; border-radius: var(--radius); font-family: var(--mono); font-size: 14px; outline: none; transition: border-color .15s; }
     input[type="text"]:focus { border-color: var(--accent); }
     input::placeholder { color: var(--muted); }
 
+    /* ── result meta ── */
     .result-meta { font-size: 11px; color: var(--muted); margin-bottom: 12px; letter-spacing: .04em; text-transform: uppercase; }
 
+    /* ── project card ── */
     .project-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; transition: border-color .15s; }
     .project-card:hover { border-color: rgba(255,255,255,.13); }
     .project-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 15px; cursor: pointer; user-select: none; gap: 10px; }
@@ -64,19 +72,121 @@
     .chevron { color: var(--muted); transition: transform .2s; flex-shrink: 0; }
     .project-card.open .chevron { transform: rotate(90deg); }
 
+    /* ── task list ── */
     .task-list { display: none; border-top: 1px solid var(--border); padding: 4px 0 8px; }
     .project-card.open .task-list { display: block; }
-    .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 15px; border-radius: 8px; margin: 2px 6px; transition: background .1s; }
-    .task-item:hover { background: rgba(255,255,255,.03); }
-    .task-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .5; flex-shrink: 0; margin-top: 6px; }
+
+    .task-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 15px; border-radius: 8px; margin: 2px 6px;
+      cursor: pointer; user-select: none;
+      transition: background .12s;
+      position: relative;
+    }
+    .task-item:active { background: rgba(79,142,247,.08); }
+    .task-item.pressing { background: rgba(79,142,247,.12); }
+
+    .task-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .5; flex-shrink: 0; }
+    .task-body { flex: 1; min-width: 0; }
     .task-title { color: var(--text); font-size: 13px; line-height: 1.45; }
     .task-title mark { background: rgba(79,142,247,.3); color: #fff; border-radius: 3px; padding: 0 1px; }
+    .task-hint { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+    .task-arrow { color: var(--muted); opacity: .4; flex-shrink: 0; }
+
     .no-tasks { padding: 10px 15px; color: var(--muted); font-size: 13px; }
 
+    /* ── empty state ── */
     .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
     .empty .emoji { font-size: 36px; margin-bottom: 10px; }
     .empty p { font-size: 14px; }
 
+    /* ── context menu ── */
+    .ctx-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0 12px 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    .ctx-overlay.show { opacity: 1; pointer-events: all; }
+
+    .ctx-sheet {
+      width: 100%; max-width: 480px;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 20px;
+      overflow: hidden;
+      transform: translateY(20px);
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .ctx-overlay.show .ctx-sheet { transform: translateY(0); }
+
+    .ctx-header {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ctx-task-name {
+      font-family: var(--head);
+      font-size: 15px; font-weight: 700; color: #fff;
+      line-height: 1.3;
+      margin-bottom: 3px;
+    }
+    .ctx-project-name {
+      font-size: 11px; color: var(--muted);
+    }
+
+    .ctx-actions { padding: 6px 0 6px; }
+
+    .ctx-btn {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; padding: 14px 18px;
+      background: none; border: none;
+      color: var(--text); font-family: var(--mono); font-size: 14px;
+      cursor: pointer; text-align: left;
+      transition: background .1s;
+    }
+    .ctx-btn:active { background: rgba(255,255,255,.04); }
+    .ctx-btn .ctx-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .ctx-btn.track  .ctx-icon { background: rgba(52,199,89,.15);  }
+    .ctx-btn.edit   .ctx-icon { background: rgba(79,142,247,.15); }
+    .ctx-btn.time   .ctx-icon { background: rgba(123,111,240,.15);}
+
+    .ctx-btn-label { flex: 1; }
+    .ctx-btn-title { font-size: 14px; color: #fff; font-weight: 500; }
+    .ctx-btn-sub   { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .ctx-cancel {
+      margin: 0 10px 2px;
+      display: block; width: calc(100% - 20px);
+      padding: 14px; border-radius: 14px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      color: var(--muted); font-family: var(--mono); font-size: 13px;
+      cursor: pointer; text-align: center;
+      transition: background .1s;
+    }
+    .ctx-cancel:active { background: rgba(255,255,255,.09); }
+
+    /* ── toast ── */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #fff;
+      font-family: var(--mono); font-size: 13px;
+      padding: 10px 20px; border-radius: 999px;
+      max-width: 80vw; text-align: center; word-break: break-word;
+      opacity: 0; transition: opacity .2s; z-index: 999; pointer-events: none;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* ── debug ── */
     .debug-card { margin-top: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
     .debug-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
     .debug-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
@@ -118,6 +228,43 @@
 
 </div>
 
+<!-- toast -->
+<div id="toast"></div>
+
+<!-- context menu -->
+<div class="ctx-overlay" id="ctxOverlay" onclick="closeCtx(event)">
+  <div class="ctx-sheet" onclick="event.stopPropagation()">
+    <div class="ctx-header">
+      <div class="ctx-task-name" id="ctxTaskName"></div>
+      <div class="ctx-project-name" id="ctxProjectName"></div>
+    </div>
+    <div class="ctx-actions">
+      <button class="ctx-btn track" onclick="ctxAction('Start Tracking')">
+        <div class="ctx-icon">▶️</div>
+        <div class="ctx-btn-label">
+          <div class="ctx-btn-title">Start Tracking</div>
+          <div class="ctx-btn-sub">Begin a time entry for this task</div>
+        </div>
+      </button>
+      <button class="ctx-btn edit" onclick="ctxAction('Edit Task Details')">
+        <div class="ctx-icon">✏️</div>
+        <div class="ctx-btn-label">
+          <div class="ctx-btn-title">Edit Task Details</div>
+          <div class="ctx-btn-sub">Update task name, notes or status</div>
+        </div>
+      </button>
+      <button class="ctx-btn time" onclick="ctxAction('Edit Time Entries')">
+        <div class="ctx-icon">🕐</div>
+        <div class="ctx-btn-label">
+          <div class="ctx-btn-title">Edit Time Entries</div>
+          <div class="ctx-btn-sub">View and adjust tracked time</div>
+        </div>
+      </button>
+    </div>
+    <button class="ctx-cancel" onclick="closeCtx()">Cancel</button>
+  </div>
+</div>
+
 <script>
 const T0 = performance.now();
 function dbg(label, extra) {
@@ -132,6 +279,10 @@ dbg("script start");
 
 let PROJECTS = {};
 
+// ── current context item ──
+let CTX = { task: "", project: "", slug: "" };
+
+// ── helpers ──
 function highlight(text, q) {
   if (!q) return escHtml(text);
   const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "gi");
@@ -143,7 +294,90 @@ function escHtml(s) {
 function escAttr(s) {
   return String(s ?? "").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
+function slugify(s) {
+  // derive a filename slug from the task title (mirrors shell script naming)
+  return String(s ?? "").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+}
+function stripQuotes(s) {
+  return String(s ?? "").replace(/^["']+|["']+$/g, "").trim();
+}
 
+// ── webhook ──
+function sendWebhook(task, project, slug, action) {
+  const url = "https://trigger.macrodroid.com/db488391-3aea-466f-915e-2a0bdb5249d1/track"
+    + "?task="    + encodeURIComponent(task)
+    + "&project=" + encodeURIComponent(project)
+    + "&slug="    + encodeURIComponent(slug)
+    + "&action="  + encodeURIComponent(action);
+
+  fetch(url)
+    .then(() => dbg("webhook ok", action + " · " + task.slice(0, 40)))
+    .catch(err => dbg("webhook error", err.message));
+}
+
+// ── toast ──
+function showToast(msg, color) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.background = color || "var(--green)";
+  t.style.opacity = "1";
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => { t.style.opacity = "0"; }, 2200);
+}
+
+// ── context menu ──
+function openCtx(task, project) {
+  CTX = { task, project, slug: slugify(task) };
+  document.getElementById("ctxTaskName").textContent    = task;
+  document.getElementById("ctxProjectName").textContent = project;
+  document.getElementById("ctxOverlay").classList.add("show");
+}
+function closeCtx(e) {
+  if (e && e.target !== document.getElementById("ctxOverlay")) return;
+  document.getElementById("ctxOverlay").classList.remove("show");
+}
+function ctxAction(action) {
+  document.getElementById("ctxOverlay").classList.remove("show");
+  sendWebhook(CTX.task, CTX.project, CTX.slug, action);
+  const icons = { "Start Tracking": "▶️", "Edit Task Details": "✏️", "Edit Time Entries": "🕐" };
+  showToast(icons[action] + "  " + action, action === "Start Tracking" ? "var(--green)" : "var(--accent)");
+  dbg("ctx action", action);
+}
+
+// ── long press detection ──
+const LONG_MS = 500;
+let _lpTimer = null;
+let _lpFired  = false;
+
+function lpStart(el) {
+  _lpFired = false;
+  el.classList.add("pressing");
+  _lpTimer = setTimeout(() => {
+    _lpFired = true;
+    el.classList.remove("pressing");
+    navigator.vibrate && navigator.vibrate(40);
+    openCtx(el.dataset.task, el.dataset.project);
+  }, LONG_MS);
+}
+function lpEnd(el) {
+  clearTimeout(_lpTimer);
+  el.classList.remove("pressing");
+  if (!_lpFired) {
+    // short tap → Start Tracking immediately
+    const task    = el.dataset.task;
+    const project = el.dataset.project;
+    const slug    = slugify(task);
+    sendWebhook(task, project, slug, "Start Tracking");
+    showToast("▶️  Tracking: " + task);
+    dbg("tap", task.slice(0, 50));
+  }
+}
+function lpCancel(el) {
+  clearTimeout(_lpTimer);
+  el.classList.remove("pressing");
+}
+
+// ── render ──
 function render(q) {
   const list = document.getElementById("projectList");
   const meta = document.getElementById("resultMeta");
@@ -182,9 +416,18 @@ function render(q) {
           <div class="task-item"
                data-task="${escAttr(t)}"
                data-project="${escAttr(name)}"
-               onclick="onTaskClick(event, this)">
+               ontouchstart="lpStart(this)"
+               ontouchend="lpEnd(this)"
+               ontouchcancel="lpCancel(this)"
+               onmousedown="lpStart(this)"
+               onmouseup="lpEnd(this)"
+               onmouseleave="lpCancel(this)">
             <div class="task-dot"></div>
-            <div class="task-title">${highlight(t, q)}</div>
+            <div class="task-body">
+              <div class="task-title">${highlight(t, q)}</div>
+              <div class="task-hint">Tap to track · Hold for options</div>
+            </div>
+            <svg class="task-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
           </div>`).join("");
 
     return `
@@ -207,41 +450,9 @@ function toggleCard(card) {
   card.classList.toggle("open");
 }
 
-function onTaskClick(e, el) {
-  e.stopPropagation(); // don't toggle the card
-
-  const taskName    = el.dataset.task;
-  const projectName = el.dataset.project;
-
-  const url = "https://trigger.macrodroid.com/db488391-3aea-466f-915e-2a0bdb5249d1/track"
-    + "?task=" + encodeURIComponent(taskName)
-    + "&project=" + encodeURIComponent(projectName);
-
-  fetch(url)
-    .then(() => { dbg("webhook ok", taskName.slice(0, 60)); })
-    .catch(err => { dbg("webhook error", err.message); });
-
-  showToast(taskName);
-}
-
-function showToast(msg) {
-  let t = document.getElementById("toast");
-  if (!t) {
-    t = document.createElement("div");
-    t.id = "toast";
-    t.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#4f8ef7;color:#fff;font-family:var(--mono);font-size:13px;padding:10px 18px;border-radius:999px;max-width:80vw;text-align:center;word-break:break-word;opacity:0;transition:opacity .2s;z-index:999;pointer-events:none;";
-    document.body.appendChild(t);
-  }
-  t.textContent = "✓ " + msg;
-  t.style.opacity = "1";
-  clearTimeout(t._hide);
-  t._hide = setTimeout(() => { t.style.opacity = "0"; }, 2000);
-}
-
+// ── load ──
 function load() {
   dbg("load start");
-
-  // Safely read the injected variable
   let b64 = "";
   try { b64 = String(typeof projects_json !== "undefined" && projects_json != null ? projects_json : ""); } catch(e) { b64 = ""; }
   dbg("variable", `len=${b64.length}`);
@@ -257,7 +468,6 @@ function load() {
     return;
   }
 
-  // Base64 decode → UTF-8 string
   let jsonStr = "";
   try {
     const clean = b64.replace(/\s+/g, "");
@@ -274,7 +484,6 @@ function load() {
     return;
   }
 
-  // Parse JSON
   let parsed;
   try {
     parsed = JSON.parse(jsonStr);
@@ -287,7 +496,12 @@ function load() {
     return;
   }
 
-  PROJECTS = parsed;
+  // Strip leading/trailing quotes from project names
+  PROJECTS = {};
+  for (const [k, v] of Object.entries(parsed)) {
+    PROJECTS[stripQuotes(k)] = v;
+  }
+
   const pCount = Object.keys(PROJECTS).length;
   const tCount = Object.values(PROJECTS).reduce((s, a) => s + a.length, 0);
   pill.className = "pill ok";
@@ -297,6 +511,7 @@ function load() {
   dbg("load done");
 }
 
+// ── events ──
 let __t;
 document.getElementById("search").addEventListener("input", e => {
   clearTimeout(__t);
