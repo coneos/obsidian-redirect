@@ -204,16 +204,14 @@ function toggleCard(card) {
 function onTaskClick(e, taskName, projectName) {
   e.stopPropagation(); // don't toggle the card
 
-  // Send command to MacroDroid via AutoApps
-  const cmd = taskName + "||" + projectName;
-  try {
-    AutoTools.sendCommand(cmd);
-    dbg("command sent", cmd.slice(0, 60));
-  } catch(err) {
-    dbg("sendCommand error", err.message);
-  }
+  const url = "https://trigger.macrodroid.com/db488391-3aea-466f-915e-2a0bdb5249d1/track"
+    + "?task=" + encodeURIComponent(taskName)
+    + "&project=" + encodeURIComponent(projectName);
 
-  // Visual feedback — highlight the tapped item briefly
+  fetch(url)
+    .then(() => { dbg("webhook ok", taskName.slice(0, 60)); })
+    .catch(err => { dbg("webhook error", err.message); });
+
   showToast(taskName);
 }
 
